@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    container_name: securewallet_postgres
+    environment:
+      POSTGRES_USER: wallet_admin
+      POSTGRES_PASSWORD: SuperSecretPassword123!
+      POSTGRES_DB: SecureWalletDB
+    ports:
+      - "5432:5432"
+    restart: unless-stopped

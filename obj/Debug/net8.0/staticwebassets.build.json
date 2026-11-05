@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "AgYn8W6KQ/5fnMHmd4FQ4kbSbkkIvB4a4tEA1Mp9GJo=",
+  "Source": "SecureWallet.Api",
+  "BasePath": "_content/SecureWallet.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
