@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using SecureWallet.Api.Data;
 using SecureWallet.Api.Models;
+using System;
+using System.Threading.Tasks;
 
 namespace SecureWallet.Api.Services;
 
@@ -18,25 +20,50 @@ public class WalletService : IWalletService
         var wallet = new Wallet
         {
             UserId = userId,
-            Currency = currency.ToUpper(),
-            Balance = 0,
+            Currency = currency,
+            Balance = 0, // Cüzdan her zaman 0 bakiye ile açılır
             CreatedAt = DateTime.UtcNow
         };
 
         _context.Wallets.Add(wallet);
         await _context.SaveChangesAsync();
+        
+        return wallet;
+    }
+
+    public async Task<Wallet?> GetWalletByIdAsync(int id)
+    {
+        return await _context.Wallets.FindAsync(id);
+    }
+
+    // YENİ: Para Yatırma
+    public async Task<Wallet> DepositAsync(int walletId, decimal amount)
+    {
+        if (amount <= 0) throw new ArgumentException("Yatırılacak miktar 0'dan büyük olmalıdır.");
+
+        var wallet = await _context.Wallets.FindAsync(walletId);
+        if (wallet == null) throw new Exception("Cüzdan bulunamadı.");
+
+        wallet.Balance += amount;
+        await _context.SaveChangesAsync();
 
         return wallet;
     }
 
-    public async Task<Wallet?> GetWalletByIdAsync(int walletId)
+    // YENİ: Para Çekme
+    public async Task<Wallet> WithdrawAsync(int walletId, decimal amount)
     {
-        return await _context.Wallets.AsNoTracking().FirstOrDefaultAsync(w => w.Id == walletId);
-    }
+        if (amount <= 0) throw new ArgumentException("Çekilecek miktar 0'dan büyük olmalıdır.");
 
-    public async Task<decimal> GetBalanceAsync(int walletId)
-    {
-        var wallet = await GetWalletByIdAsync(walletId);
-        return wallet?.Balance ?? 0;
+        var wallet = await _context.Wallets.FindAsync(walletId);
+        if (wallet == null) throw new Exception("Cüzdan bulunamadı.");
+
+        // Yetersiz bakiye kontrolü
+        if (wallet.Balance < amount) throw new Exception("Yetersiz bakiye.");
+
+        wallet.Balance -= amount;
+        await _context.SaveChangesAsync();
+
+        return wallet;
     }
 }

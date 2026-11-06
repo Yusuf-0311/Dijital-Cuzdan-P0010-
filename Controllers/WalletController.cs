@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SecureWallet.Api.Data;
 using SecureWallet.Api.Services;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SecureWallet.Api.Controllers;
 
@@ -47,6 +50,34 @@ public class WalletController : ControllerBase
         });
     }
 
+    [HttpPost("{id}/deposit")]
+    public async Task<IActionResult> Deposit(int id, [FromBody] TransactionRequest request)
+    {
+        try
+        {
+            var wallet = await _walletService.DepositAsync(id, request.Amount);
+            return Ok(new { Message = "Para başarıyla yatırıldı.", YeniBakiye = wallet.Balance });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id}/withdraw")]
+    public async Task<IActionResult> Withdraw(int id, [FromBody] TransactionRequest request)
+    {
+        try
+        {
+            var wallet = await _walletService.WithdrawAsync(id, request.Amount);
+            return Ok(new { Message = "Para başarıyla çekildi.", YeniBakiye = wallet.Balance });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = ex.Message });
+        }
+    }
+
     [HttpPost("create-test-user")]
     public async Task<IActionResult> CreateTestUser([FromServices] AppDbContext context)
     {
@@ -56,4 +87,16 @@ public class WalletController : ControllerBase
         
         return Ok(new { Message = "1 ID'li test kullanıcısı eklendi (veya zaten mevcuttu). Artık cüzdan oluşturabilirsin." });
     }
+
+    [HttpGet("list-all")]
+    public async Task<IActionResult> ListAllWallets([FromServices] AppDbContext context)
+    {
+        var wallets = await context.Wallets.Select(w => new { w.Id, w.UserId, w.Balance, w.Currency }).ToListAsync();
+        return Ok(wallets);
+    }
+}
+
+public class TransactionRequest
+{
+    public decimal Amount { get; set; }
 }
