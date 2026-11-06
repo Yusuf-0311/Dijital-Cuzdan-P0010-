@@ -67,17 +67,19 @@ namespace SecureWallet.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("ReceiverWalletId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("SenderWalletId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Status")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WalletId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("WalletId");
 
                     b.ToTable("Transactions");
                 });
@@ -139,6 +141,17 @@ namespace SecureWallet.Api.Migrations
                     b.ToTable("Wallets");
                 });
 
+            modelBuilder.Entity("SecureWallet.Api.Models.Transaction", b =>
+                {
+                    b.HasOne("SecureWallet.Api.Models.Wallet", "Wallet")
+                        .WithMany("Transactions")
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Wallet");
+                });
+
             modelBuilder.Entity("SecureWallet.Api.Models.Wallet", b =>
                 {
                     b.HasOne("SecureWallet.Api.Models.User", "User")
@@ -153,6 +166,11 @@ namespace SecureWallet.Api.Migrations
             modelBuilder.Entity("SecureWallet.Api.Models.User", b =>
                 {
                     b.Navigation("Wallet");
+                });
+
+            modelBuilder.Entity("SecureWallet.Api.Models.Wallet", b =>
+                {
+                    b.Navigation("Transactions");
                 });
 #pragma warning restore 612, 618
         }

@@ -94,6 +94,18 @@ public class WalletController : ControllerBase
         var wallets = await context.Wallets.Select(w => new { w.Id, w.UserId, w.Balance, w.Currency }).ToListAsync();
         return Ok(wallets);
     }
+
+    // İŞLEM GEÇMİŞİ METODU DOĞRU YERDE
+    [HttpGet("{id}/transactions")]
+    public async Task<IActionResult> GetTransactionHistory(int id, [FromServices] AppDbContext context)
+    {
+        var transactions = await context.Transactions
+            .Where(t => t.WalletId == id)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync();
+            
+        return Ok(transactions);
+    }
 }
 
 public class TransactionRequest

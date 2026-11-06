@@ -1,5 +1,5 @@
 using System;
-
+using System.Collections.Generic;
 namespace SecureWallet.Api.Models;
 
 public class Wallet
@@ -15,6 +15,7 @@ public class Wallet
     
     // Hatayı çözen satır:
     public DateTime CreatedAt { get; set; } 
+    public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     
     // EF Core Navigation Property (Kullanıcı tablosuna referans)
     public User? User { get; set; }
