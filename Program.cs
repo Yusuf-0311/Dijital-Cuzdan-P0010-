@@ -1,13 +1,26 @@
+using Microsoft.EntityFrameworkCore;
+using SecureWallet.Api.Data;
+using SecureWallet.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// 1. Controller desteğini ekle
+builder.Services.AddControllers();
+
+// 2. Swagger/OpenAPI dokümantasyonunu ekle (Test edebilmek için)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// 3. PostgreSQL Veritabanı (AppDbContext) bağlantısını kaydet
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// 4. Yazdığımız Wallet Servisi için Dependency Injection (DI) kaydı
+builder.Services.AddScoped<IWalletService, WalletService>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 5. HTTP İstek Hattı (Pipeline) Ayarları
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -16,29 +29,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseAuthorization();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+// 6. Controller'ları (Uç Noktaları) eşleştir
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
