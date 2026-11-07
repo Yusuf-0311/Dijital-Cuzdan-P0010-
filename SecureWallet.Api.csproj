@@ -22,4 +22,17 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <!-- Test projesi bu klasörün altında; API projesi onun dosyalarını derlemesin -->
+  <ItemGroup>
+    <Compile Remove="tests/**" />
+    <Content Remove="tests/**" />
+    <None Remove="tests/**" />
+    <EmbeddedResource Remove="tests/**" />
+  </ItemGroup>
+
+  <!-- internal yardımcı sınıfları (TransactionRules, NameMasker...) birim testlerinde kullanabilmek için -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="SecureWallet.Api.Tests" />
+  </ItemGroup>
+
 </Project>
