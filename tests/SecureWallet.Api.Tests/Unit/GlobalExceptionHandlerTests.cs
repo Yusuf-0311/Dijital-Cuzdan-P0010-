@@ -36,7 +36,8 @@ public class GlobalExceptionHandlerTests
         Assert.Equal(StatusCodes.Status500InternalServerError, context.Response.StatusCode);
 
         context.Response.Body.Position = 0;
-        var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        using var reader = new StreamReader(context.Response.Body);
+        var body = await reader.ReadToEndAsync();
 
         Assert.Contains("traceId", body);
         Assert.DoesNotContain("gizli-sql-detayi", body);
