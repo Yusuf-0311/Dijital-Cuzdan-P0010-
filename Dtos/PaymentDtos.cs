@@ -1,11 +1,27 @@
+using System.Text.Json.Serialization;
+
 namespace SecureWallet.Api.Dtos;
 
 // ---- İstekler ----
-public record PayBillRequest(int BillerId, string SubscriberNo, decimal Amount, string? Description, bool SaveForLater = false, string? Nickname = null);
+// Sayısal alanlar [JsonRequired]: eksik gönderilirse 0 kabul edilmez, 400 döner.
+// SaveForLater isteğe bağlı olduğu için nullable (gönderilmezse "kaydetme").
 
-public record PaySavedRequest(decimal Amount, string? Description);
+public record PayBillRequest(
+    [property: JsonRequired] int BillerId,
+    string SubscriberNo,
+    [property: JsonRequired] decimal Amount,
+    string? Description,
+    bool? SaveForLater = null,
+    string? Nickname = null);
 
-public record CreateSavedPaymentRequest(int BillerId, string SubscriberNo, string Nickname);
+public record PaySavedRequest(
+    [property: JsonRequired] decimal Amount,
+    string? Description);
+
+public record CreateSavedPaymentRequest(
+    [property: JsonRequired] int BillerId,
+    string SubscriberNo,
+    string Nickname);
 
 // ---- Yanıtlar ----
 public record BillerDto(int Id, string Name, string Category, string SubscriberNoLabel);
