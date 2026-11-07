@@ -1,12 +1,16 @@
-version: '3.8'
 services:
   db:
     image: postgres:15
     container_name: securewallet_postgres
     environment:
       POSTGRES_USER: wallet_admin
-      POSTGRES_PASSWORD: SuperSecretPassword123!
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env dosyasinda POSTGRES_PASSWORD tanimli olmali}
       POSTGRES_DB: SecureWalletDB
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+
+volumes:
+  pgdata:

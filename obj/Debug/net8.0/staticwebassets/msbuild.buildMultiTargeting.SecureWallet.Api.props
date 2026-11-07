@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/SecureWallet.Api.props" />
-</Project>

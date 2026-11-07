@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- dotnet user-secrets için gerekli; gizli bilgiler repoya girmeden yerelde saklanır -->
+    <UserSecretsId>securewallet-api-7f3c2a1e-5b8d-4c6a-9e41-2d0b6a8f1c35</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
