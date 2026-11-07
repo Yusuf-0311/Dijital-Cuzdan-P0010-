@@ -99,10 +99,7 @@ public class TransferService : ITransferService
         if (string.IsNullOrWhiteSpace(query))
             return ServiceResult<RecipientDto>.Fail(ErrorCode.Validation, "E-posta veya kullanıcı adı girilmelidir.");
 
-        var key = query.Trim().ToLowerInvariant();
-
-        var match = await _db.Wallets.AsNoTracking()
-            .Where(w => w.User!.Email.ToLower() == key || w.User!.Username.ToLower() == key)
+        var match = await WalletsMatching(query)
             .Select(w => new { w.Id, w.UserId, w.Currency, w.User!.Username })
             .FirstOrDefaultAsync(ct);
 
@@ -148,12 +145,26 @@ public class TransferService : ITransferService
         return ServiceResult<IReadOnlyList<RecentRecipientDto>>.Ok(result);
     }
 
-    private async Task<int?> FindWalletIdAsync(string recipient, CancellationToken ct)
-    {
-        var key = recipient.Trim().ToLowerInvariant();
-        return await _db.Wallets.AsNoTracking()
-            .Where(w => w.User!.Email.ToLower() == key || w.User!.Username.ToLower() == key)
+    private Task<int?> FindWalletIdAsync(string recipient, CancellationToken ct) =>
+        WalletsMatching(recipient)
             .Select(w => (int?)w.Id)
             .FirstOrDefaultAsync(ct);
+
+    /// <summary>
+    /// E-posta veya kullanıcı adı (büyük/küçük harf duyarsız) ile cüzdan arar.
+    /// </summary>
+    /// <remarks>
+    /// Bilinçli karar: Kod analizi (CA1862) burada string.Equals(..., StringComparison.OrdinalIgnoreCase)
+    /// önerir; ancak bu ifade LINQ-to-Entities sorgusu içindedir ve EF Core onu SQL'e ÇEVİREMEZ
+    /// (çalışma anında InvalidOperationException). ToLower() ise PostgreSQL'de lower() olarak çevrilir.
+    /// Kural bellek içi string karşılaştırması için geçerli olduğundan burada bastırıldı.
+    /// </remarks>
+    private IQueryable<Wallet> WalletsMatching(string recipient)
+    {
+        var key = recipient.Trim().ToLowerInvariant();
+#pragma warning disable CA1862 // EF Core sorgusu: StringComparison SQL'e çevrilemez (bkz. remarks)
+        return _db.Wallets.AsNoTracking()
+            .Where(w => w.User!.Email.ToLower() == key || w.User!.Username.ToLower() == key);
+#pragma warning restore CA1862
     }
 }

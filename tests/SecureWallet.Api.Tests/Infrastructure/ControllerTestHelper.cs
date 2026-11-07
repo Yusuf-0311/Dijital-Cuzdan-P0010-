@@ -13,9 +13,9 @@ namespace SecureWallet.Api.Tests.Infrastructure;
 /// </summary>
 public static class ControllerTestHelper
 {
-    private static readonly IServiceProvider Services = BuildServices();
+    private static readonly ServiceProvider Services = BuildServices();
 
-    private static IServiceProvider BuildServices()
+    private static ServiceProvider BuildServices()
     {
         var services = new ServiceCollection();
         services.AddLogging();
