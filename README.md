@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/Yusuf-0311/Dijital-Cuzdan-P0010-/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/Yusuf-0311/Dijital-Cuzdan-P0010-/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Yusuf-0311/Dijital-Cuzdan-P0010-/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/Yusuf-0311/Dijital-Cuzdan-P0010-/actions/workflows/codeql.yml)
-[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=Yusuf-0311_Dijital-Cuzdan-P0010&metric=alert_status&branch=develop)](https://sonarcloud.io/summary/new_code?id=Yusuf-0311_Dijital-Cuzdan-P0010&branch=develop)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Yusuf-0311_Dijital-Cuzdan-P0010&metric=coverage&branch=develop)](https://sonarcloud.io/summary/new_code?id=Yusuf-0311_Dijital-Cuzdan-P0010&branch=develop)
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=Yusuf-0311_Dijital-Cuzdan-P0010&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Yusuf-0311_Dijital-Cuzdan-P0010)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Yusuf-0311_Dijital-Cuzdan-P0010&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Yusuf-0311_Dijital-Cuzdan-P0010)
 
 Kullanıcıların hesap bakiyelerini yönetebildiği, birbirlerine para transferi yapabildiği, para yatırıp çekebildiği, fatura gibi sık kullanılan ödemeleri tek tıkla yapabildiği ve tüm işlem geçmişini dekontlarıyla görüntüleyebildiği bir dijital cüzdan backend API'si.
 
