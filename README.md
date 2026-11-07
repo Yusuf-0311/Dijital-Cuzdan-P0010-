@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Yusuf-0311/Dijital-Cuzdan-P0010-/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/Yusuf-0311/Dijital-Cuzdan-P0010-/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Yusuf-0311/Dijital-Cuzdan-P0010-/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/Yusuf-0311/Dijital-Cuzdan-P0010-/actions/workflows/codeql.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=Yusuf-0311_Dijital-Cuzdan-P0010-&metric=alert_status&branch=develop)](https://sonarcloud.io/summary/new_code?id=Yusuf-0311_Dijital-Cuzdan-P0010-&branch=develop)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Yusuf-0311_Dijital-Cuzdan-P0010-&metric=coverage&branch=develop)](https://sonarcloud.io/summary/new_code?id=Yusuf-0311_Dijital-Cuzdan-P0010-&branch=develop)
 
 Kullanıcıların hesap bakiyelerini yönetebildiği, birbirlerine para transferi yapabildiği, para yatırıp çekebildiği, fatura gibi sık kullanılan ödemeleri tek tıkla yapabildiği ve tüm işlem geçmişini dekontlarıyla görüntüleyebildiği bir dijital cüzdan backend API'si.
 
@@ -254,6 +256,11 @@ Docker çalışıyor olmalıdır. Testler kendi geçici PostgreSQL konteynerleri
 | `Integration/PaymentServiceTests` | Fatura ödeme, kayıtlı ödemeler, kullanım sırası, başkasının kaydına erişim engeli |
 | `Integration/ConcurrencyTests` | Aynı anda iki çekimde bakiyenin bozulmaması, paralel yatırmalarda kayıp güncelleme olmaması, karşılıklı transferlerde toplam paranın korunması |
 | `Integration/DatabaseConstraintTests` | Negatif bakiye, sıfır tutar, alıcısız transfer, kurumsuz ödeme ve tekrarlı e-postanın veritabanınca reddedilmesi |
+| `Integration/ControllerTests` | 13 uç noktanın tamamı: kimliksiz istekte 401, başarılı akışlar, hata kodları (400/404/422) |
+| `Unit/ServiceResultExtensionsTests` | Her servis hata kodunun doğru HTTP durum koduna çevrilmesi |
+| `Unit/GlobalExceptionHandlerTests` | Beklenmeyen hatada 500 dönülmesi ve SQL/hata detayının istemciye sızmaması |
+| `Unit/RequestDtoTests` | Zorunlu sayısal alan eksik gönderildiğinde isteğin reddedilmesi (under-posting) |
+| `Unit/ClaimsPrincipalExtensionsTests`, `Unit/ServiceCollectionExtensionsTests` | JWT'den kullanıcı Id'si okuma; tüm servis kayıtlarının eksiksiz olması |
 
 Neden InMemory veritabanı değil? CHECK kısıtları, unique index'ler, `xmin` eşzamanlılık kontrolü ve transaction davranışı yalnızca gerçek PostgreSQL'de çalışır. Bu yüzden entegrasyon testleri Testcontainers ile gerçek PostgreSQL'e karşı çalıştırılır.
 
@@ -266,6 +273,8 @@ Neden InMemory veritabanı değil? CHECK kısıtları, unique index'ler, `xmin` 
 | Dependabot | Güvenlik açığı olan bağımlılıklar için otomatik güncelleme PR'ı | `.github/dependabot.yml` |
 | `dotnet list package --vulnerable` | Açıklı paket varsa CI'ı kırar | `.github/workflows/ci.yml` |
 
+**Son durum (`develop`):** SonarCloud Quality Gate **geçti**, **0 açık sorun**, yeni kodda **%100 test kapsamı**, **%0 kod tekrarı**, 0 güvenlik bulgusu. İlk analizde 12 sorun ve %71,8 kapsam vardı; nasıl kapatıldığı aşağıdaki "Zorluklar" bölümünde (9-12. maddeler).
+
 Uygulanan güvenlik önlemleri:
 
 - **Gizli bilgiler repoda yok.** Veritabanı şifresi `.env` ve `dotnet user-secrets` ile tutulur. `.env`, `bin/`, `obj/` `.gitignore`'da.
@@ -274,7 +283,7 @@ Uygulanan güvenlik önlemleri:
 - **Yatay yetki yükseltmeye karşı koruma.** Başkasının dekontu veya kayıtlı ödemesi istendiğinde "bulunamadı" döner (403 bile dönülmez, kaynağın varlığı sızdırılmaz).
 - **Eşzamanlılık güvenliği.** PostgreSQL `xmin` ile optimistic concurrency, deadlock ve çakışmada otomatik yeniden deneme.
 - **Atomiklik.** Bakiye güncellemeleri, işlem kaydı ve audit kaydı tek veritabanı transaction'ında yazılır.
-- **Girdi doğrulama.** Tutar (pozitif, en fazla 2 ondalık, üst limit), açıklama uzunluğu, abone no formatı.
+- **Girdi doğrulama.** Tutar (pozitif, en fazla 2 ondalık, üst limit), açıklama uzunluğu, abone no formatı. Zorunlu sayısal alanlar `[JsonRequired]`: gönderilmezse sessizce `0` kabul edilmez, 400 döner (under-posting koruması).
 - **SQL injection yok.** Tüm sorgular EF Core üzerinden parametreli.
 - **Hata detayı sızdırılmaz.** `GlobalExceptionHandler` stack trace yerine genel mesaj ve `traceId` döner.
 - **Hız sınırı (rate limiting).** Para hareketlerinde dakikada 10 istek.
@@ -294,13 +303,15 @@ Uygulanan güvenlik önlemleri:
 
 1. Önce görev tanımını ve mevcut kodu yapay zekaya verip inceleme istedik. Ortaya çıkan bulgular (repoda açık veritabanı şifresi, `bin/obj` klasörlerinin repoda olması, işlem tablosunda foreign key ve kısıt olmaması, eşzamanlı isteklerde bakiye bozulma riski) öncelik sırasıyla düzeltildi.
 2. Yapay zekanın ürettiği kod doğrudan kabul edilmedi. Her değişiklik yerelde derlendi, migration'lar gerçek veritabanına uygulanıp `psql` ile tablo yapısı kontrol edildi.
-3. Üretilen kodda hatalar da çıktı ve bunlar elle düzeltildi (bkz. aşağıdaki "Zorluklar" bölümündeki 2 ve 3 numaralı maddeler). Bu, yapay zeka çıktısının mutlaka doğrulanması gerektiğini gösterdi.
+3. Üretilen kodda hatalar da çıktı ve bunlar düzeltildi (bkz. "Zorluklar" bölümündeki 2, 3, 8 ve 10. maddeler). Bu, yapay zeka çıktısının mutlaka doğrulanması gerektiğini gösterdi.
 4. Kritik iş kuralları (yetersiz bakiye, eşzamanlı çekim, başkasının verisine erişim) otomatik testlerle güvence altına alındı.
+5. Yapay zekanın yazdığı kod her PR'da **bağımsız araçlarla** (CodeQL, SonarCloud) tekrar denetlendi. Araçların önerileri de körü körüne uygulanmadı: her bulgu tek tek değerlendirildi, biri yanlış alarm olarak gerekçesiyle bastırıldı (11. madde).
 
 **Değerlendirmemiz**
 
 - **Faydalı olduğu yerler:** gözden kaçan güvenlik sorunlarını bulma, PostgreSQL'e özgü özellikleri (`xmin`, `jsonb`) önerme, tekrarlayan kodu hızlı yazma, test senaryosu çıkarma.
-- **Dikkat gerektiren yerler:** EF Core'un ürettiği migration'ın PostgreSQL'de çalışmayacağını önceden öngörememesi gibi ortama özgü hatalar. Yapay zeka kodu çalıştırıp test edemediği için doğrulama sorumluluğu tamamen bizdeydi.
+- **Dikkat gerektiren yerler:** EF Core'un ürettiği migration'ın PostgreSQL'de çalışmayacağını önceden öngörememesi gibi ortama özgü hatalar; testlerde kaynak kapatmayı unutmak (CodeQL yakaladı); API girdilerinde eksik alan koruması (SonarCloud yakaladı). Yapay zeka kodu çalıştırıp test edemediği için doğrulama sorumluluğu tamamen bizdeydi.
+- **Çıkardığımız ders:** Yapay zeka + otomatik test + statik analiz birlikte kullanıldığında hatalar PR aşamasında, ana dala girmeden yakalanıyor.
 
 ## Karşılaşılan zorluklar ve çözümler
 
@@ -313,13 +324,19 @@ Uygulanan güvenlik önlemleri:
 | 5 | Transferde iki cüzdan güncellemesinden biri başarısız olursa para kaybolabilirdi. | İki bakiye güncellemesi, işlem kaydı ve audit kaydı tek `SaveChanges` = tek veritabanı transaction'ında yazıldı. |
 | 6 | `Wallets.Currency` sütunu modelde `varchar(3)` olduğu halde veritabanında `text` kalmıştı. | `psql \d` ile fark edildi, ayrı bir düzeltme migration'ı (`FixWalletCurrencyLength`) eklendi. |
 | 7 | Derleme çıktıları (`bin/`, `obj/`, ~32 MB) repoya girmişti. | `.gitignore` eklendi, `git rm -r --cached bin obj` ile takipten çıkarıldı. |
-| _8_ | _[ortağın karşılaştığı zorluk: ör. JWT yapılandırması]_ | _[çözüm]_ |
+| 8 | CodeQL, yapay zekanın yazdığı bir testte `StreamReader` nesnesinin kapatılmadığını (kaynak sızıntısı) PR aşamasında yakaladı. | Önerilen `using` düzeltmesi PR içinde uygulandı. Yapay zeka çıktısının bağımsız araçla denetlenmesinin somut örneği. |
+| 9 | SonarCloud ilk analizde Quality Gate'i geçmedi: test kapsamı %71,8 (gereken %80). Servisler test ediliyordu ama controller'lar, hata yakalayıcı ve yardımcı sınıflar test edilmemişti. | Controller, hata yakalayıcı ve uzantı testleri eklendi; hiç kullanılmayan `AuditService.LogAsync` silindi; sadece `dotnet ef` araçlarının kullandığı `AppDbContextFactory` gerekçesiyle kapsam dışı bırakıldı. Yeni kodda kapsam %100'e çıktı. |
+| 10 | SonarCloud 8 yerde "under-posting" riski buldu: istemci `amount` veya `billerId` göndermezse C# bunu sessizce `0` yapıyordu. | Zorunlu sayısal alanlara `[JsonRequired]` eklendi (eksikse otomatik 400); isteğe bağlı alanlar nullable yapıldı. `RequestDtoTests` ile kanıtlandı. |
+| 11 | SonarCloud, alıcı aramasında `ToLower()` yerine `string.Equals(..., OrdinalIgnoreCase)` kullanılmasını önerdi (3 bulgu). Öneri uygulanırsa EF Core sorguyu SQL'e çeviremediği için transfer çalışma anında hata verecekti. | Öneri **uygulanmadı**: tekrarlanan sorgu tek metoda (`WalletsMatching`) toplandı, kural sadece o satırda bastırıldı ve gerekçesi koda yazıldı. Araç önerilerinin de değerlendirilmesi gerektiğinin örneği. |
+| 12 | `Program.cs`'te senkron `app.Run()` kullanılıyordu (SonarCloud). | `await app.RunAsync()` olarak değiştirildi. |
+| _13_ | _[ortağın karşılaştığı zorluk: ör. JWT yapılandırması]_ | _[çözüm]_ |
 
 ## Geliştirme süreci
 
 - **Dallar:** `main` (teslim), `develop` (entegrasyon), `feat/*`, `fix/*`, `test/*`, `ci/*` (özellik dalları).
 - Her özellik ayrı bir dalda geliştirilip **Pull Request** ile `develop`'a birleştirilir. PR şablonu `.github/pull_request_template.md` içindedir.
-- Her PR'da CI (derleme + testler), CodeQL ve SonarCloud otomatik çalışır.
+- Her PR'da CI (derleme + testler), CodeQL ve SonarCloud otomatik çalışır. Kontroller geçmeden birleştirme yapılmaz.
+- Örnek akış: veritabanı düzeltmeleri → servisler → API uç noktaları → testler → CI/dokümantasyon → kapsam testleri → statik analiz bulgularının düzeltilmesi (her biri ayrı PR).
 
 ## Ekip ve görev dağılımı
 
