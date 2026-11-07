@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SecureWallet.Api.Dtos;
 using SecureWallet.Api.Extensions;
 using SecureWallet.Api.Services;
@@ -55,6 +56,7 @@ public class PaymentController : ControllerBase
     ///               "saveForLater": true, "nickname": "Ev elektriği" }
     /// </summary>
     [HttpPost("pay")]
+    [EnableRateLimiting(RateLimitPolicies.Money)]
     public async Task<IActionResult> Pay([FromBody] PayBillRequest request, CancellationToken ct)
     {
         var userId = User.GetUserId();
@@ -65,6 +67,7 @@ public class PaymentController : ControllerBase
 
     /// <summary>Kayıtlı ödemeyle tek tıkla öde: { "amount": 245.50 }</summary>
     [HttpPost("saved/{id:int}/pay")]
+    [EnableRateLimiting(RateLimitPolicies.Money)]
     public async Task<IActionResult> PaySaved(int id, [FromBody] PaySavedRequest request, CancellationToken ct)
     {
         var userId = User.GetUserId();

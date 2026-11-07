@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SecureWallet.Api.Dtos;
 using SecureWallet.Api.Extensions;
 using SecureWallet.Api.Services;
@@ -27,6 +28,7 @@ public class WalletController : ControllerBase
 
     /// <summary>Para yatır.</summary>
     [HttpPost("deposit")]
+    [EnableRateLimiting(RateLimitPolicies.Money)]
     public async Task<IActionResult> Deposit([FromBody] MoneyRequest request, CancellationToken ct)
     {
         var userId = User.GetUserId();
@@ -38,6 +40,7 @@ public class WalletController : ControllerBase
 
     /// <summary>Para çek.</summary>
     [HttpPost("withdraw")]
+    [EnableRateLimiting(RateLimitPolicies.Money)]
     public async Task<IActionResult> Withdraw([FromBody] MoneyRequest request, CancellationToken ct)
     {
         var userId = User.GetUserId();

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SecureWallet.Api.Data;
-using SecureWallet.Api.Services;
+using SecureWallet.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,17 +18,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Cüzdan servisleri
-builder.Services.AddHttpContextAccessor(); // AuditService IP adresini buradan okur
-builder.Services.AddScoped<IAuditService, AuditService>();
-builder.Services.AddScoped<IWalletService, WalletService>();
-builder.Services.AddScoped<ITransferService, TransferService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddGlobalErrorHandling();
+builder.Services.AddMoneyRateLimiting();
+builder.Services.AddWalletServices();
 
 // TODO (Auth): JWT ayarları (AddAuthentication().AddJwtBearer(...)) burada, builder.Build()'den önce eklenecek.
 //              Token'a kullanıcı Id'si ClaimTypes.NameIdentifier (veya "sub") olarak konmalı.
 
 var app = builder.Build();
+
+app.UseExceptionHandler(); // en başta: sonraki tüm middleware'lerin hatalarını yakalar
 
 if (app.Environment.IsDevelopment())
 {
@@ -40,6 +39,7 @@ app.UseHttpsRedirection();
 
 // TODO (Auth): app.UseAuthentication(); satırı UseAuthorization'dan ÖNCE gelmeli.
 app.UseAuthorization();
+app.UseRateLimiter(); // kimlik doğrulamadan sonra: limit kullanıcı başına uygulanır
 
 app.MapControllers();
 
