@@ -43,4 +43,4 @@ app.UseRateLimiter(); // kimlik doğrulamadan sonra: limit kullanıcı başına 
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
