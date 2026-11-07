@@ -6,11 +6,11 @@ namespace SecureWallet.Api.Services;
 
 public interface IAuditService
 {
-    /// <summary>Kaydı sadece context'e ekler; çağıran SaveChanges ile işlemle birlikte kaydeder (atomik).</summary>
+    /// <summary>
+    /// Denetim kaydını sadece context'e ekler. Çağıran servis SaveChanges ile işlemle
+    /// BİRLİKTE kaydeder; böylece işlem başarısız olursa yarım audit kaydı kalmaz.
+    /// </summary>
     void Add(int? userId, string action, object details);
-
-    /// <summary>Kaydı ekler ve hemen kaydeder (örn. başarısız giriş denemesi için).</summary>
-    Task LogAsync(int? userId, string action, object details, CancellationToken ct = default);
 }
 
 public class AuditService : IAuditService
@@ -34,11 +34,5 @@ public class AuditService : IAuditService
             Details = JsonSerializer.Serialize(details), // DB sütunu jsonb: geçerli JSON olmalı
             Timestamp = DateTime.UtcNow
         });
-    }
-
-    public async Task LogAsync(int? userId, string action, object details, CancellationToken ct = default)
-    {
-        Add(userId, action, details);
-        await _db.SaveChangesAsync(ct);
     }
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -7,7 +8,9 @@ namespace SecureWallet.Api.Data;
 /// <summary>
 /// "dotnet ef" komutları (migrations add / database update) için tasarım zamanı fabrikası.
 /// Bağlantı dizesini appsettings.json, user-secrets ve ortam değişkenlerinden okur.
+/// Uygulama çalışırken kullanılmaz; bu yüzden test kapsamı ölçümünden hariç tutulur.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Sadece dotnet ef araçları tarafından tasarım zamanında kullanılır.")]
 public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
