@@ -14,6 +14,10 @@ public class Transaction
     public int? SenderWalletId { get; set; }
     public int? ReceiverWalletId { get; set; }
 
+    // Sadece Payment (fatura ödeme) işlemlerinde dolu.
+    public int? BillerId { get; set; }
+    public string? SubscriberNo { get; set; }
+
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "TRY";
     public string? Description { get; set; }
@@ -26,4 +30,5 @@ public class Transaction
 
     public Wallet? SenderWallet { get; set; }
     public Wallet? ReceiverWallet { get; set; }
+    public Biller? Biller { get; set; }
 }

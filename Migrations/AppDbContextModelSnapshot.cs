@@ -59,6 +59,133 @@ namespace SecureWallet.Api.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("SecureWallet.Api.Models.Biller", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SubscriberNoLabel")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Billers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Category = "Electricity",
+                            IsActive = true,
+                            Name = "Kent Elektrik Dağıtım",
+                            SubscriberNoLabel = "Tesisat No"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Category = "Water",
+                            IsActive = true,
+                            Name = "Şehir Su İdaresi",
+                            SubscriberNoLabel = "Abone No"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Category = "NaturalGas",
+                            IsActive = true,
+                            Name = "Anadolu Doğalgaz",
+                            SubscriberNoLabel = "Abone No"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Category = "Internet",
+                            IsActive = true,
+                            Name = "HızlıNet İnternet",
+                            SubscriberNoLabel = "Hizmet No"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Category = "MobilePhone",
+                            IsActive = true,
+                            Name = "Mavi Mobil",
+                            SubscriberNoLabel = "Telefon No"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Category = "Education",
+                            IsActive = true,
+                            Name = "Üniversite Harç Ödemeleri",
+                            SubscriberNoLabel = "Öğrenci No"
+                        });
+                });
+
+            modelBuilder.Entity("SecureWallet.Api.Models.SavedPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BillerId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nickname")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("SubscriberNo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BillerId");
+
+                    b.HasIndex("UserId", "BillerId", "SubscriberNo")
+                        .IsUnique();
+
+                    b.ToTable("SavedPayments");
+                });
+
             modelBuilder.Entity("SecureWallet.Api.Models.Transaction", b =>
                 {
                     b.Property<int>("Id")
@@ -70,6 +197,9 @@ namespace SecureWallet.Api.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<int?>("BillerId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -107,12 +237,18 @@ namespace SecureWallet.Api.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("SubscriberNo")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BillerId");
 
                     b.HasIndex("ReferenceNo")
                         .IsUnique();
@@ -124,6 +260,8 @@ namespace SecureWallet.Api.Migrations
                     b.ToTable("Transactions", t =>
                         {
                             t.HasCheckConstraint("CK_Transactions_Amount_Positive", "\"Amount\" > 0");
+
+                            t.HasCheckConstraint("CK_Transactions_Payment_Biller", "(\"Type\" = 'Payment'\n    AND \"BillerId\" IS NOT NULL AND \"SubscriberNo\" IS NOT NULL)\nOR (\"Type\" <> 'Payment' AND \"BillerId\" IS NULL)");
 
                             t.HasCheckConstraint("CK_Transactions_Type_Wallets", "(\"Type\" = 'Deposit'\n    AND \"SenderWalletId\" IS NULL AND \"ReceiverWalletId\" IS NOT NULL)\nOR (\"Type\" IN ('Withdraw', 'Payment')\n    AND \"SenderWalletId\" IS NOT NULL AND \"ReceiverWalletId\" IS NULL)\nOR (\"Type\" = 'Transfer'\n    AND \"SenderWalletId\" IS NOT NULL AND \"ReceiverWalletId\" IS NOT NULL\n    AND \"SenderWalletId\" <> \"ReceiverWalletId\")");
                         });
@@ -205,8 +343,32 @@ namespace SecureWallet.Api.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SecureWallet.Api.Models.SavedPayment", b =>
+                {
+                    b.HasOne("SecureWallet.Api.Models.Biller", "Biller")
+                        .WithMany()
+                        .HasForeignKey("BillerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SecureWallet.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Biller");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SecureWallet.Api.Models.Transaction", b =>
                 {
+                    b.HasOne("SecureWallet.Api.Models.Biller", "Biller")
+                        .WithMany()
+                        .HasForeignKey("BillerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SecureWallet.Api.Models.Wallet", "ReceiverWallet")
                         .WithMany("ReceivedTransactions")
                         .HasForeignKey("ReceiverWalletId")
@@ -216,6 +378,8 @@ namespace SecureWallet.Api.Migrations
                         .WithMany("SentTransactions")
                         .HasForeignKey("SenderWalletId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Biller");
 
                     b.Navigation("ReceiverWallet");
 
