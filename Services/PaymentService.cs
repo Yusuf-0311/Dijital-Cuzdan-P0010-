@@ -133,7 +133,7 @@ public class PaymentService : IPaymentService
 
         // Ödemeyle birlikte kaydedilecekse takma ad baştan doğrulanır.
         string? nickname = null;
-        if (request.SaveForLater)
+        if (request.SaveForLater == true)
         {
             nickname = request.Nickname?.Trim() ?? "";
             var nickError = ValidateNickname(nickname);
@@ -145,7 +145,7 @@ public class PaymentService : IPaymentService
 
         // Ödeme başarılıysa "sık kullanılanlar"a ekle. Bu adım başarısız olursa (limit, zaten kayıtlı)
         // ödeme geri alınmaz; para gitti, sadece kayıt eklenmedi.
-        if (result.Success && request.SaveForLater)
+        if (result.Success && request.SaveForLater == true)
         {
             var already = await _db.SavedPayments.AnyAsync(
                 s => s.UserId == userId && s.BillerId == request.BillerId && s.SubscriberNo == subscriberNo, ct);

@@ -1,16 +1,30 @@
+using System.Text.Json.Serialization;
+
 namespace SecureWallet.Api.Dtos;
 
 // ---- İstekler ----
-public record MoneyRequest(decimal Amount, string? Description);
+// Sayısal alanlar [JsonRequired]: istemci alanı göndermezse sessizce 0 olmak yerine
+// otomatik 400 Bad Request döner ("under-posting" koruması).
+
+public record MoneyRequest(
+    [property: JsonRequired] decimal Amount,
+    string? Description);
 
 /// <summary>
 /// Recipient: alıcının e-postası veya kullanıcı adı (önerilen).
 /// ReceiverWalletId: alternatif olarak doğrudan cüzdan Id'si. İkisinden biri dolu olmalı.
 /// </summary>
-public record TransferRequest(string? Recipient, int? ReceiverWalletId, decimal Amount, string? Description);
+public record TransferRequest(
+    string? Recipient,
+    int? ReceiverWalletId,
+    [property: JsonRequired] decimal Amount,
+    string? Description);
 
-/// <summary>İşlem geçmişi filtresi. Type: Deposit, Withdraw, Transfer, Payment. From/To: UTC tarih.</summary>
-public record TransactionFilter(string? Type, DateTime? From, DateTime? To, int Page = 1, int PageSize = 20);
+/// <summary>
+/// İşlem geçmişi filtresi (query string). Type: Deposit, Withdraw, Transfer, Payment.
+/// From/To: UTC tarih. Page/PageSize verilmezse 1 ve 20 kullanılır.
+/// </summary>
+public record TransactionFilter(string? Type, DateTime? From, DateTime? To, int? Page = null, int? PageSize = null);
 
 // ---- Yanıtlar ----
 public record WalletDto(int Id, decimal Balance, string Currency);

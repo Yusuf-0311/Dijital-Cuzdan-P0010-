@@ -138,8 +138,8 @@ public class WalletService : IWalletService
         if (wallet is null)
             return ServiceResult<PagedResult<TransactionDto>>.Fail(ErrorCode.NotFound, "Cüzdan bulunamadı.");
 
-        var page = Math.Max(filter.Page, 1);
-        var pageSize = Math.Clamp(filter.PageSize, 1, 100);
+        var page = Math.Max(filter.Page ?? 1, 1);
+        var pageSize = Math.Clamp(filter.PageSize ?? 20, 1, 100);
         var walletId = wallet.Id;
 
         var query = _db.Transactions.AsNoTracking()
