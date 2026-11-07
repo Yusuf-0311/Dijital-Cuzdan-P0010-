@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SecureWallet.Api.Data;
+using SecureWallet.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +18,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Cüzdan servisleri
+builder.Services.AddHttpContextAccessor(); // AuditService IP adresini buradan okur
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IWalletService, WalletService>();
+builder.Services.AddScoped<ITransferService, TransferService>();
+
 // TODO (Auth): JWT ayarları (AddAuthentication().AddJwtBearer(...)) burada, builder.Build()'den önce eklenecek.
-// TODO (Wallet): builder.Services.AddScoped<IWalletService, WalletService>(); gibi servis kayıtları burada.
+//              Token'a kullanıcı Id'si ClaimTypes.NameIdentifier (veya "sub") olarak konmalı.
 
 var app = builder.Build();
 
