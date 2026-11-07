@@ -32,15 +32,17 @@ namespace SecureWallet.Api.Migrations
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Details")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("timestamp with time zone");
@@ -49,6 +51,10 @@ namespace SecureWallet.Api.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("AuditLogs");
                 });
@@ -62,24 +68,65 @@ namespace SecureWallet.Api.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("ReceiverWalletId")
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<decimal?>("ReceiverBalanceAfter")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int?>("ReceiverWalletId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("SenderWalletId")
+                    b.Property<string>("ReferenceNo")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal?>("SenderBalanceAfter")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int?>("SenderWalletId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Transactions");
+                    b.HasIndex("ReferenceNo")
+                        .IsUnique();
+
+                    b.HasIndex("ReceiverWalletId", "CreatedAt");
+
+                    b.HasIndex("SenderWalletId", "CreatedAt");
+
+                    b.ToTable("Transactions", t =>
+                        {
+                            t.HasCheckConstraint("CK_Transactions_Amount_Positive", "\"Amount\" > 0");
+
+                            t.HasCheckConstraint("CK_Transactions_Type_Wallets", "(\"Type\" = 'Deposit'\n    AND \"SenderWalletId\" IS NULL AND \"ReceiverWalletId\" IS NOT NULL)\nOR (\"Type\" IN ('Withdraw', 'Payment')\n    AND \"SenderWalletId\" IS NOT NULL AND \"ReceiverWalletId\" IS NULL)\nOR (\"Type\" = 'Transfer'\n    AND \"SenderWalletId\" IS NOT NULL AND \"ReceiverWalletId\" IS NOT NULL\n    AND \"SenderWalletId\" <> \"ReceiverWalletId\")");
+                        });
                 });
 
             modelBuilder.Entity("SecureWallet.Api.Models.User", b =>
@@ -95,17 +142,26 @@ namespace SecureWallet.Api.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
@@ -119,21 +175,51 @@ namespace SecureWallet.Api.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Balance")
-                        .HasColumnType("numeric");
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Wallets");
+                    b.ToTable("Wallets", t =>
+                        {
+                            t.HasCheckConstraint("CK_Wallets_Balance_NonNegative", "\"Balance\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("SecureWallet.Api.Models.Transaction", b =>
+                {
+                    b.HasOne("SecureWallet.Api.Models.Wallet", "ReceiverWallet")
+                        .WithMany("ReceivedTransactions")
+                        .HasForeignKey("ReceiverWalletId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SecureWallet.Api.Models.Wallet", "SenderWallet")
+                        .WithMany("SentTransactions")
+                        .HasForeignKey("SenderWalletId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ReceiverWallet");
+
+                    b.Navigation("SenderWallet");
                 });
 
             modelBuilder.Entity("SecureWallet.Api.Models.Wallet", b =>
@@ -141,7 +227,7 @@ namespace SecureWallet.Api.Migrations
                     b.HasOne("SecureWallet.Api.Models.User", "User")
                         .WithOne("Wallet")
                         .HasForeignKey("SecureWallet.Api.Models.Wallet", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -150,6 +236,13 @@ namespace SecureWallet.Api.Migrations
             modelBuilder.Entity("SecureWallet.Api.Models.User", b =>
                 {
                     b.Navigation("Wallet");
+                });
+
+            modelBuilder.Entity("SecureWallet.Api.Models.Wallet", b =>
+                {
+                    b.Navigation("ReceivedTransactions");
+
+                    b.Navigation("SentTransactions");
                 });
 #pragma warning restore 612, 618
         }

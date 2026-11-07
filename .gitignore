@@ -1,0 +1,15 @@
+# Derleme çıktıları
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Gizli bilgiler (ASLA commit'lenmemeli)
+.env
+appsettings.*.local.json
+secrets.json
