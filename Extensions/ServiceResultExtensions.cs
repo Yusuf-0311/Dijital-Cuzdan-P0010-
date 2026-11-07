@@ -18,7 +18,9 @@ public static class ServiceResultExtensions
             ErrorCode.NotFound => (StatusCodes.Status404NotFound, "Bulunamadı"),
             ErrorCode.InsufficientFunds => (StatusCodes.Status422UnprocessableEntity, "Yetersiz bakiye"),
             ErrorCode.CurrencyMismatch => (StatusCodes.Status422UnprocessableEntity, "Para birimi uyuşmazlığı"),
+            ErrorCode.LimitExceeded => (StatusCodes.Status422UnprocessableEntity, "Limit aşıldı"),
             ErrorCode.Conflict => (StatusCodes.Status409Conflict, "Çakışma"),
+            ErrorCode.Duplicate => (StatusCodes.Status409Conflict, "Kayıt zaten var"),
             _ => (StatusCodes.Status500InternalServerError, "Hata")
         };
 

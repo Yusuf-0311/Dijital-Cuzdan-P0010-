@@ -132,18 +132,40 @@ public class WalletService : IWalletService
         });
     }
 
-    public async Task<ServiceResult<PagedResult<TransactionDto>>> GetTransactionsAsync(int userId, int page, int pageSize, CancellationToken ct = default)
+    public async Task<ServiceResult<PagedResult<TransactionDto>>> GetTransactionsAsync(int userId, TransactionFilter filter, CancellationToken ct = default)
     {
         var wallet = await _db.Wallets.AsNoTracking().FirstOrDefaultAsync(w => w.UserId == userId, ct);
         if (wallet is null)
             return ServiceResult<PagedResult<TransactionDto>>.Fail(ErrorCode.NotFound, "Cüzdan bulunamadı.");
 
-        page = Math.Max(page, 1);
-        pageSize = Math.Clamp(pageSize, 1, 100);
+        var page = Math.Max(filter.Page, 1);
+        var pageSize = Math.Clamp(filter.PageSize, 1, 100);
         var walletId = wallet.Id;
 
         var query = _db.Transactions.AsNoTracking()
             .Where(t => t.SenderWalletId == walletId || t.ReceiverWalletId == walletId);
+
+        if (!string.IsNullOrWhiteSpace(filter.Type))
+        {
+            if (!Enum.TryParse<TransactionType>(filter.Type, ignoreCase: true, out var type) || !Enum.IsDefined(type))
+                return ServiceResult<PagedResult<TransactionDto>>.Fail(
+                    ErrorCode.Validation, "Geçersiz işlem tipi. Kullanılabilir: Deposit, Withdraw, Transfer, Payment.");
+            query = query.Where(t => t.Type == type);
+        }
+
+        if (filter.From is not null && filter.To is not null && filter.From > filter.To)
+            return ServiceResult<PagedResult<TransactionDto>>.Fail(ErrorCode.Validation, "Başlangıç tarihi bitiş tarihinden sonra olamaz.");
+
+        if (filter.From is { } from)
+        {
+            var fromUtc = DateTime.SpecifyKind(from, DateTimeKind.Utc);
+            query = query.Where(t => t.CreatedAt >= fromUtc);
+        }
+        if (filter.To is { } to)
+        {
+            var toUtc = DateTime.SpecifyKind(to, DateTimeKind.Utc);
+            query = query.Where(t => t.CreatedAt <= toUtc);
+        }
 
         var total = await query.CountAsync(ct);
 
@@ -152,6 +174,7 @@ public class WalletService : IWalletService
             .ThenByDescending(t => t.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .WithParties()
             .ToListAsync(ct);
 
         var items = rows.Select(t => TransactionMapper.ToDto(t, walletId)).ToList();
@@ -166,10 +189,13 @@ public class WalletService : IWalletService
             return ServiceResult<TransactionDto>.Fail(ErrorCode.NotFound, "Cüzdan bulunamadı.");
 
         var walletId = wallet.Id;
+        var refNo = (referenceNo ?? "").Trim().ToUpperInvariant();
 
         // İşlemin tarafı değilse "yok" gibi davran (başkasının işlem numarasını keşfetmesin).
-        var tx = await _db.Transactions.AsNoTracking().FirstOrDefaultAsync(
-            t => t.ReferenceNo == referenceNo && (t.SenderWalletId == walletId || t.ReceiverWalletId == walletId), ct);
+        var tx = await _db.Transactions.AsNoTracking()
+            .Where(t => t.ReferenceNo == refNo && (t.SenderWalletId == walletId || t.ReceiverWalletId == walletId))
+            .WithParties()
+            .FirstOrDefaultAsync(ct);
 
         return tx is null
             ? ServiceResult<TransactionDto>.Fail(ErrorCode.NotFound, "İşlem bulunamadı.")

@@ -23,6 +23,7 @@ builder.Services.AddHttpContextAccessor(); // AuditService IP adresini buradan o
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IWalletService, WalletService>();
 builder.Services.AddScoped<ITransferService, TransferService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 // TODO (Auth): JWT ayarları (AddAuthentication().AddJwtBearer(...)) burada, builder.Build()'den önce eklenecek.
 //              Token'a kullanıcı Id'si ClaimTypes.NameIdentifier (veya "sub") olarak konmalı.

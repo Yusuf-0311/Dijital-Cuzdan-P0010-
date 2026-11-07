@@ -47,15 +47,17 @@ public class WalletController : ControllerBase
             await _wallets.WithdrawAsync(userId.Value, request.Amount, request.Description, ct));
     }
 
-    /// <summary>İşlem geçmişi (yeniden eskiye, sayfalı).</summary>
+    /// <summary>
+    /// İşlem geçmişi (yeniden eskiye, sayfalı).
+    /// Örnek: /api/wallet/transactions?type=Payment&amp;from=2026-11-01&amp;to=2026-11-30&amp;page=1&amp;pageSize=20
+    /// </summary>
     [HttpGet("transactions")]
-    public async Task<IActionResult> GetTransactions(
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    public async Task<IActionResult> GetTransactions([FromQuery] TransactionFilter filter, CancellationToken ct)
     {
         var userId = User.GetUserId();
         if (userId is null) return Unauthorized();
 
-        return this.ToActionResult(await _wallets.GetTransactionsAsync(userId.Value, page, pageSize, ct));
+        return this.ToActionResult(await _wallets.GetTransactionsAsync(userId.Value, filter, ct));
     }
 
     /// <summary>Dekont: referans numarasıyla tek işlemin detayı.</summary>
