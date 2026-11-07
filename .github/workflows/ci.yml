@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Derleme ve testler
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Bağımlılıkları yükle
+        run: dotnet restore tests/SecureWallet.Api.Tests/SecureWallet.Api.Tests.csproj
+
+      - name: Derle (uyarılar dahil)
+        run: dotnet build tests/SecureWallet.Api.Tests/SecureWallet.Api.Tests.csproj --no-restore -c Release
+
+      # Entegrasyon testleri Testcontainers ile gerçek PostgreSQL başlatır (runner'da Docker hazır).
+      - name: Testler + kapsam (coverage)
+        run: >
+          dotnet test tests/SecureWallet.Api.Tests/SecureWallet.Api.Tests.csproj
+          --no-build -c Release
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory TestResults
+          --collect "XPlat Code Coverage"
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Güvenlik açığı olan paket kontrolü
+        run: |
+          dotnet list SecureWallet.Api.csproj package --vulnerable --include-transitive | tee vulnerable.txt
+          if grep -q "has the following vulnerable packages" vulnerable.txt; then
+            echo "::error::Güvenlik açığı olan NuGet paketi bulundu."
+            exit 1
+          fi
+
+      - name: Test sonuçlarını sakla
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults

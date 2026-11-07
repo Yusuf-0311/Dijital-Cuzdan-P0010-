@@ -1,0 +1,27 @@
+name: CodeQL (güvenlik taraması)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: "0 3 * * 1" # her pazartesi
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          build-mode: none
+          queries: security-and-quality
+
+      - uses: github/codeql-action/analyze@v3

@@ -1,0 +1,66 @@
+name: SonarCloud (kod kalitesi)
+
+# Kurulum (bir kez):
+# 1) sonarcloud.io'ya GitHub ile gir, repoyu içe aktar. Administration > Analysis Method > "Automatic Analysis"ı KAPAT.
+# 2) GitHub repo > Settings > Secrets and variables > Actions:
+#    - Secrets:   SONAR_TOKEN        (SonarCloud > My Account > Security'den üretilen token)
+#    - Variables: SONAR_PROJECT_KEY  (örn. Yusuf-0311_Dijital-Cuzdan-P0010-)
+#                 SONAR_ORGANIZATION (SonarCloud'daki organizasyon anahtarı)
+# Bu değişkenler tanımlı değilse iş atlanır, CI kırılmaz.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  sonar:
+    if: ${{ vars.SONAR_PROJECT_KEY != '' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Sonar'ın "yeni kod" analizi için tüm geçmiş gerekli
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Sonar tarayıcısını yükle
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Analizi başlat
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          dotnet sonarscanner begin
+          /k:"${{ vars.SONAR_PROJECT_KEY }}"
+          /o:"${{ vars.SONAR_ORGANIZATION }}"
+          /d:sonar.token="$SONAR_TOKEN"
+          /d:sonar.host.url="https://sonarcloud.io"
+          /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          /d:sonar.exclusions="Migrations/**"
+          /d:sonar.coverage.exclusions="Migrations/**,tests/**,Program.cs"
+
+      - name: Derle ve test et
+        run: |
+          dotnet build tests/SecureWallet.Api.Tests/SecureWallet.Api.Tests.csproj -c Release
+          dotnet test tests/SecureWallet.Api.Tests/SecureWallet.Api.Tests.csproj --no-build -c Release \
+            --collect "XPlat Code Coverage" \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Analizi bitir ve gönder
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
