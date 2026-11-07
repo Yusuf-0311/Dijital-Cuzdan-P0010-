@@ -1,0 +1,15 @@
+# Bağımlılıklardaki güvenlik açıkları için haftalık güncelleme PR'ları açar.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directories:
+      - "/"
+      - "/tests/SecureWallet.Api.Tests"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
