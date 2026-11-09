@@ -342,5 +342,5 @@ Uygulanan güvenlik önlemleri:
 
 | Üye | Sorumluluk |
 |---|---|
-| Yusuf | Veritabanı mimarisi, cüzdan bakiye yönetimi, transfer servisleri, fatura ödemeleri, işlem geçmişi ve dekont, testler, CI |
-| _[ortak adı]_ | Kullanıcı kaydı ve girişi (`AuthController`), JWT üretimi, şifre hash'leme, girdi doğrulama |
+| Yusuf | Veritabanı mimarisi, cüzdan bakiye yönetimi, transfer servisleri, fatura ödemeleri, işlem geçmişi ve dekont, testler, CI; planlanan: günlük işlem limiti, PDF dekont, otomatik ödeme talimatı, loglama |
+| Kadir | Kimlik doğrulama (`AuthController`, JWT, şifre hash'leme, girdi doğrulama) ve hesap güvenliği; planlanan: web arayüzü, ürün içi yapay zeka özelliği, değiştirilemez işlem defteri, Docker paketleme |
