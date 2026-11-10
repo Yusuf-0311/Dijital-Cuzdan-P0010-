@@ -24,3 +24,5 @@ public class RegisterRequest
         ErrorMessage = "Şifre en az bir harf ve bir rakam içermelidir.")]
     public string Password { get; set; } = string.Empty;
 }
+/// <summary>Kayıt başarılı olunca dönen bilgi. Şifre veya hash ASLA dönülmez.</summary>
+public record AuthUserDto(int Id, string Username, string Email, int WalletId);
