@@ -21,6 +21,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddGlobalErrorHandling();
 builder.Services.AddMoneyRateLimiting();
 builder.Services.AddWalletServices();
+builder.Services.AddAuthServices();
 
 // TODO (Auth): JWT ayarları (AddAuthentication().AddJwtBearer(...)) burada, builder.Build()'den önce eklenecek.
 //              Token'a kullanıcı Id'si ClaimTypes.NameIdentifier (veya "sub") olarak konmalı.
