@@ -22,6 +22,7 @@ builder.Services.AddGlobalErrorHandling();
 builder.Services.AddMoneyRateLimiting();
 builder.Services.AddWalletServices();
 builder.Services.AddAuthServices();
+builder.Services.AddWebClientCors(builder.Configuration);
 
 // TODO (Auth): JWT ayarları (AddAuthentication().AddJwtBearer(...)) burada, builder.Build()'den önce eklenecek.
 //              Token'a kullanıcı Id'si ClaimTypes.NameIdentifier (veya "sub") olarak konmalı.
@@ -37,6 +38,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors(CorsPolicies.WebClient); // web sitesinin API'yi çağırabilmesi için; kimlik doğrulamadan ÖNCE
 
 // TODO (Auth): app.UseAuthentication(); satırı UseAuthorization'dan ÖNCE gelmeli.
 app.UseAuthorization();

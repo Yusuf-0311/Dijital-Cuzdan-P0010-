@@ -60,6 +60,39 @@ public class WalletService : IWalletService
             : ServiceResult<WalletDto>.Ok(ToDto(wallet));
     }
 
+    public async Task<ServiceResult<WalletSummaryDto>> GetSummaryAsync(int userId, CancellationToken ct = default)
+    {
+        var wallet = await _db.Wallets.AsNoTracking().FirstOrDefaultAsync(w => w.UserId == userId, ct);
+        if (wallet is null)
+            return ServiceResult<WalletSummaryDto>.Fail(ErrorCode.NotFound, "Cüzdan bulunamadı.");
+
+        var walletId = wallet.Id;
+        var now = DateTime.UtcNow;
+        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        var recentRows = await _db.Transactions.AsNoTracking()
+            .Where(t => t.SenderWalletId == walletId || t.ReceiverWalletId == walletId)
+            .OrderByDescending(t => t.CreatedAt)
+            .ThenByDescending(t => t.Id)
+            .Take(5)
+            .WithParties()
+            .ToListAsync(ct);
+
+        // Toplamlar veritabanında hesaplanır (SUM); işlemler belleğe çekilmez.
+        var thisMonth = _db.Transactions.AsNoTracking()
+            .Where(t => t.CreatedAt >= monthStart && t.Status == TransactionStatus.Completed);
+
+        var incoming = await thisMonth.Where(t => t.ReceiverWalletId == walletId)
+            .SumAsync(t => (decimal?)t.Amount, ct) ?? 0m;
+        var outgoing = await thisMonth.Where(t => t.SenderWalletId == walletId)
+            .SumAsync(t => (decimal?)t.Amount, ct) ?? 0m;
+
+        var recent = recentRows.Select(t => TransactionMapper.ToDto(t, walletId)).ToList();
+
+        return ServiceResult<WalletSummaryDto>.Ok(
+            new WalletSummaryDto(ToDto(wallet), recent, incoming, outgoing, monthStart));
+    }
+
     public Task<ServiceResult<TransactionDto>> DepositAsync(int userId, decimal amount, string? description, CancellationToken ct = default)
     {
         var error = TransactionRules.Validate(amount, description);

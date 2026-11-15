@@ -26,6 +26,16 @@ public class WalletController : ControllerBase
         return this.ToActionResult(await _wallets.GetWalletAsync(userId.Value, ct));
     }
 
+    /// <summary>Ana sayfa özeti: bakiye, son 5 işlem, bu ayın gelen/giden toplamı (tek çağrı).</summary>
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetSummary(CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null) return Unauthorized();
+
+        return this.ToActionResult(await _wallets.GetSummaryAsync(userId.Value, ct));
+    }
+
     /// <summary>Para yatır.</summary>
     [HttpPost("deposit")]
     [EnableRateLimiting(RateLimitPolicies.Money)]
