@@ -29,6 +29,7 @@ public class ServiceResultExtensionsTests
     [InlineData(ErrorCode.InsufficientFunds, 422)]
     [InlineData(ErrorCode.CurrencyMismatch, 422)]
     [InlineData(ErrorCode.LimitExceeded, 422)]
+    [InlineData(ErrorCode.InvalidCredentials, 401)]
     [InlineData(ErrorCode.None, 500)]
     public void Failure_MapsToExpectedStatusCode(ErrorCode code, int expectedStatus)
     {

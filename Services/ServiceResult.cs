@@ -10,7 +10,8 @@ public enum ErrorCode
     SelfTransfer,
     Conflict,
     Duplicate,
-    LimitExceeded
+    LimitExceeded,
+    InvalidCredentials
 }
 
 /// <summary>
