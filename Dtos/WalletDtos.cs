@@ -30,6 +30,17 @@ public record TransactionFilter(string? Type, DateTime? From, DateTime? To, int?
 public record WalletDto(int Id, decimal Balance, string Currency);
 
 /// <summary>
+/// Web sitesi ana sayfası için tek çağrıda özet: bakiye, son 5 işlem ve bu ayın gelen/giden toplamı.
+/// MonthStart: ay başlangıcı (UTC).
+/// </summary>
+public record WalletSummaryDto(
+    WalletDto Wallet,
+    IReadOnlyList<TransactionDto> RecentTransactions,
+    decimal MonthIncoming,
+    decimal MonthOutgoing,
+    DateTime MonthStart);
+
+/// <summary>
 /// Hareket listesi ve dekont için işlem özeti.
 /// Direction, BalanceAfter ve Counterparty isteği yapan kullanıcının cüzdanına göre hesaplanır.
 /// </summary>
