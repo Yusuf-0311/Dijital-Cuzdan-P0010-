@@ -26,3 +26,16 @@ public class RegisterRequest
 }
 /// <summary>Kayıt başarılı olunca dönen bilgi. Şifre veya hash ASLA dönülmez.</summary>
 public record AuthUserDto(int Id, string Username, string Email, int WalletId);
+/// <summary>Giriş isteği. Girişte şifre kuralları uygulanmaz, sadece boş olmamalı.</summary>
+public class LoginRequest
+{
+    [Required(ErrorMessage = "E-posta zorunludur.")]
+    [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi girin.")]
+    public string Email { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Şifre zorunludur.")]
+    [StringLength(128, ErrorMessage = "Şifre en fazla 128 karakter olabilir.")]
+    public string Password { get; set; } = string.Empty;
+}
+
+public record LoginResponse(string AccessToken, DateTime ExpiresAt, int UserId, string Username);

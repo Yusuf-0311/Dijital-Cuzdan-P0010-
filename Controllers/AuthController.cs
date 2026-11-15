@@ -26,4 +26,11 @@ public class AuthController : ControllerBase
             ? StatusCode(StatusCodes.Status201Created, result.Data)
             : this.ToActionResult(result);
     }
+
+    /// <summary>Giriş. Başarılıysa JWT döner; hatalı bilgide 401.</summary>
+    [HttpPost("login")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
+        => this.ToActionResult(await _auth.LoginAsync(request, ct));
 }

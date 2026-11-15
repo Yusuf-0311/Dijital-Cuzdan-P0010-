@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SecureWallet.Api.Data;
@@ -16,8 +15,7 @@ public class AuthServiceTests
 
     public AuthServiceTests(PostgresFixture fx) => _fx = fx;
 
-    private static AuthService CreateService(AppDbContext db) =>
-        new(db, TestData.CreateWalletService(db), new PasswordHasher<User>(), new AuditService(db, new HttpContextAccessor()));
+    private static AuthService CreateService(AppDbContext db) => AuthTestData.CreateAuthService(db);
 
     private static RegisterRequest NewRequest(string password = "Sifre1234")
     {

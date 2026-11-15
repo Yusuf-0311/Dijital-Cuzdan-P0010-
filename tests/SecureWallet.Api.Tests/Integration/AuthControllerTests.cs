@@ -21,10 +21,7 @@ public class AuthControllerTests
     public AuthControllerTests(PostgresFixture fx) => _fx = fx;
 
     private static AuthController CreateController(AppDbContext db) =>
-        new AuthController(new AuthService(
-            db, TestData.CreateWalletService(db), new PasswordHasher<User>(),
-            new AuditService(db, new HttpContextAccessor())))
-        .WithUser(null); // kayıt için giriş gerekmez
+        new AuthController(AuthTestData.CreateAuthService(db)).WithUser(null); // kayıt için giriş gerekmez
 
     [Fact]
     public async Task Register_Returns201_ThenSameEmailReturns409()

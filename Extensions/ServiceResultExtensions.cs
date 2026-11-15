@@ -21,6 +21,7 @@ public static class ServiceResultExtensions
             ErrorCode.LimitExceeded => (StatusCodes.Status422UnprocessableEntity, "Limit aşıldı"),
             ErrorCode.Conflict => (StatusCodes.Status409Conflict, "Çakışma"),
             ErrorCode.Duplicate => (StatusCodes.Status409Conflict, "Kayıt zaten var"),
+            ErrorCode.InvalidCredentials => (StatusCodes.Status401Unauthorized, "Giriş başarısız"),
             _ => (StatusCodes.Status500InternalServerError, "Hata")
         };
 
