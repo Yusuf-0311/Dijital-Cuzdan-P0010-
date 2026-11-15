@@ -16,16 +16,14 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connect
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerWithJwt();
 
 builder.Services.AddGlobalErrorHandling();
 builder.Services.AddMoneyRateLimiting();
 builder.Services.AddWalletServices();
 builder.Services.AddAuthServices();
 builder.Services.AddWebClientCors(builder.Configuration);
-
-// TODO (Auth): JWT ayarları (AddAuthentication().AddJwtBearer(...)) burada, builder.Build()'den önce eklenecek.
-//              Token'a kullanıcı Id'si ClaimTypes.NameIdentifier (veya "sub") olarak konmalı.
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
@@ -40,10 +38,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors(CorsPolicies.WebClient); // web sitesinin API'yi çağırabilmesi için; kimlik doğrulamadan ÖNCE
-
-// TODO (Auth): app.UseAuthentication(); satırı UseAuthorization'dan ÖNCE gelmeli.
-app.UseAuthorization();
-app.UseRateLimiter(); // kimlik doğrulamadan sonra: limit kullanıcı başına uygulanır
+app.UseAuthentication();             // token'ı okuyup kullanıcıyı tanır
+app.UseAuthorization();              // [Authorize] olan uç noktalara kimliksiz isteği reddeder
+app.UseRateLimiter();                // kimlik doğrulamadan sonra: limit kullanıcı başına uygulanır
 
 app.MapControllers();
 
