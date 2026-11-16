@@ -131,6 +131,33 @@ public class AuthService : IAuthService
         return ServiceResult<LoginResponse>.Ok(new LoginResponse(token.Token, token.ExpiresAt, user.Id, user.Username));
     }
 
+    public async Task<ServiceResult<bool>> ChangePasswordAsync(int userId, ChangePasswordRequest request, CancellationToken ct = default)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null)
+            return ServiceResult<bool>.Fail(ErrorCode.NotFound, "Kullanıcı bulunamadı.");
+
+        // Token çalınmış olsa bile şifre, mevcut şifre bilinmeden değiştirilemez.
+        if (_hasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
+        {
+            _audit.Add(user.Id, "Başarısız Şifre Değiştirme", new { user.Username });
+            await _db.SaveChangesAsync(ct);
+
+            // 401 değil 400: kullanıcının oturumu geçerli, sadece girdiği mevcut şifre yanlış.
+            // 401 dönseydi arayüz bunu "oturum düştü" sanıp kullanıcıyı çıkışa yönlendirebilirdi.
+            return ServiceResult<bool>.Fail(ErrorCode.Validation, "Mevcut şifre hatalı.");
+        }
+
+        if (request.NewPassword == request.CurrentPassword)
+            return ServiceResult<bool>.Fail(ErrorCode.Validation, "Yeni şifre mevcut şifreyle aynı olamaz.");
+
+        user.PasswordHash = _hasher.HashPassword(user, request.NewPassword);
+        _audit.Add(user.Id, "Şifre Değiştirildi", new { user.Username });
+        await _db.SaveChangesAsync(ct);
+
+        return ServiceResult<bool>.Ok(true);
+    }
+
     // Hatalı denemeyi tek bir UPDATE ile veritabanında atomik olarak sayar. Sayaç C# tarafında
     // okunup +1 yazılsaydı, aynı anda gelen iki hatalı istekten biri kaybolabilirdi (lost update)
     // ve saldırgan paralel isteklerle 5 deneme sınırını aşabilirdi.
