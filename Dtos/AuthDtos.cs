@@ -24,8 +24,10 @@ public class RegisterRequest
         ErrorMessage = "Şifre en az bir harf ve bir rakam içermelidir.")]
     public string Password { get; set; } = string.Empty;
 }
+
 /// <summary>Kayıt başarılı olunca dönen bilgi. Şifre veya hash ASLA dönülmez.</summary>
 public record AuthUserDto(int Id, string Username, string Email, int WalletId);
+
 /// <summary>Giriş isteği. Girişte şifre kuralları uygulanmaz, sadece boş olmamalı.</summary>
 public class LoginRequest
 {
@@ -39,3 +41,20 @@ public class LoginRequest
 }
 
 public record LoginResponse(string AccessToken, DateTime ExpiresAt, int UserId, string Username);
+
+/// <summary>
+/// Şifre değiştirme isteği. Yeni şifre, kayıttaki kurallarla aynı kontrollerden geçer;
+/// mevcut şifrede sadece boş olmaması ve uzunluk sınırı aranır.
+/// </summary>
+public class ChangePasswordRequest
+{
+    [Required(ErrorMessage = "Mevcut şifre zorunludur.")]
+    [StringLength(128, ErrorMessage = "Şifre en fazla 128 karakter olabilir.")]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Yeni şifre zorunludur.")]
+    [StringLength(128, MinimumLength = 8, ErrorMessage = "Yeni şifre 8-128 karakter olmalıdır.")]
+    [RegularExpression("^(?=.*[A-Za-z])(?=.*\\d).+$",
+        ErrorMessage = "Yeni şifre en az bir harf ve bir rakam içermelidir.")]
+    public string NewPassword { get; set; } = string.Empty;
+}

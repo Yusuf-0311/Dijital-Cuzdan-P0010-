@@ -11,7 +11,8 @@ public enum ErrorCode
     Conflict,
     Duplicate,
     LimitExceeded,
-    InvalidCredentials
+    InvalidCredentials,
+    AccountLocked
 }
 
 /// <summary>
