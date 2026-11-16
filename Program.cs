@@ -20,6 +20,7 @@ builder.Services.AddSwaggerWithJwt();
 
 builder.Services.AddGlobalErrorHandling();
 builder.Services.AddMoneyRateLimiting();
+builder.Services.AddAuthRateLimiting();
 builder.Services.AddWalletServices();
 builder.Services.AddAuthServices();
 builder.Services.AddWebClientCors(builder.Configuration);
