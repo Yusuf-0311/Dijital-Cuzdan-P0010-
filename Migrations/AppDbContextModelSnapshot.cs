@@ -261,9 +261,9 @@ namespace SecureWallet.Api.Migrations
                         {
                             t.HasCheckConstraint("CK_Transactions_Amount_Positive", "\"Amount\" > 0");
 
-                            t.HasCheckConstraint("CK_Transactions_Payment_Biller", "(\"Type\" = 'Payment'\n    AND \"BillerId\" IS NOT NULL AND \"SubscriberNo\" IS NOT NULL)\nOR (\"Type\" <> 'Payment' AND \"BillerId\" IS NULL)");
+                            t.HasCheckConstraint("CK_Transactions_Payment_Biller", "(\"Type\" = 'Payment'\r\n    AND \"BillerId\" IS NOT NULL AND \"SubscriberNo\" IS NOT NULL)\r\nOR (\"Type\" <> 'Payment' AND \"BillerId\" IS NULL)");
 
-                            t.HasCheckConstraint("CK_Transactions_Type_Wallets", "(\"Type\" = 'Deposit'\n    AND \"SenderWalletId\" IS NULL AND \"ReceiverWalletId\" IS NOT NULL)\nOR (\"Type\" IN ('Withdraw', 'Payment')\n    AND \"SenderWalletId\" IS NOT NULL AND \"ReceiverWalletId\" IS NULL)\nOR (\"Type\" = 'Transfer'\n    AND \"SenderWalletId\" IS NOT NULL AND \"ReceiverWalletId\" IS NOT NULL\n    AND \"SenderWalletId\" <> \"ReceiverWalletId\")");
+                            t.HasCheckConstraint("CK_Transactions_Type_Wallets", "(\"Type\" = 'Deposit'\r\n    AND \"SenderWalletId\" IS NULL AND \"ReceiverWalletId\" IS NOT NULL)\r\nOR (\"Type\" IN ('Withdraw', 'Payment')\r\n    AND \"SenderWalletId\" IS NOT NULL AND \"ReceiverWalletId\" IS NULL)\r\nOR (\"Type\" = 'Transfer'\r\n    AND \"SenderWalletId\" IS NOT NULL AND \"ReceiverWalletId\" IS NOT NULL\r\n    AND \"SenderWalletId\" <> \"ReceiverWalletId\")");
                         });
                 });
 
@@ -282,6 +282,12 @@ namespace SecureWallet.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<int>("FailedLoginCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
