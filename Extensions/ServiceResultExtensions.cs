@@ -22,9 +22,14 @@ public static class ServiceResultExtensions
             ErrorCode.Conflict => (StatusCodes.Status409Conflict, "Çakışma"),
             ErrorCode.Duplicate => (StatusCodes.Status409Conflict, "Kayıt zaten var"),
             ErrorCode.InvalidCredentials => (StatusCodes.Status401Unauthorized, "Giriş başarısız"),
+                ErrorCode.AccountLocked => (StatusCodes.Status423Locked, "Hesap kilitli"),
             _ => (StatusCodes.Status500InternalServerError, "Hata")
+            
         };
 
         return controller.Problem(detail: result.Message, statusCode: status, title: title);
     }
+
+    
 }
+
