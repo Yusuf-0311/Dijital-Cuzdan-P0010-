@@ -49,10 +49,14 @@ public static class TestData
             DailyOutgoingLimit = dailyLimit ?? WalletLimitOptions.DefaultDailyOutgoingLimit
         });
 
+    /// <summary>Test için cüzdan servisi kurar.</summary>
+    /// <param name="db">Testin veritabanı bağlantısı.</param>
     /// <param name="dailyLimit">Günlük çıkış limiti; verilmezse varsayılan (100.000).</param>
     public static WalletService CreateWalletService(AppDbContext db, decimal? dailyLimit = null) =>
         new(db, Audit(db), Limits(dailyLimit));
 
+    /// <summary>Test için transfer servisi kurar.</summary>
+    /// <param name="db">Testin veritabanı bağlantısı.</param>
     /// <param name="dailyLimit">Günlük çıkış limiti; verilmezse varsayılan (100.000).</param>
     public static TransferService CreateTransferService(AppDbContext db, decimal? dailyLimit = null) =>
         new(db, Audit(db), Limits(dailyLimit));
