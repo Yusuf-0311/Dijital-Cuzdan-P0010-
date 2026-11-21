@@ -20,7 +20,8 @@ permissions:
 
 jobs:
   sonar:
-    if: ${{ vars.SONAR_PROJECT_KEY != '' }}
+    # Dependabot PR'larına GitHub gizli anahtar vermez; paket güncellemesinde analiz edilecek kod da yok.
+    if: ${{ vars.SONAR_PROJECT_KEY != '' && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
 
     steps:

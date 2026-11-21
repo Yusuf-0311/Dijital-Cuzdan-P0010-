@@ -8,8 +8,17 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # Proje .NET 8 (LTS) üzerinde. .NET 9/10 gerektiren büyük sürümler önerilmesin;
+      # aynı ana sürümdeki güvenlik yamaları gelmeye devam eder.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
+    groups:
+      # Actions güncellemeleri tek PR'da gelsin.
+      github-actions:
+        patterns: ["*"]
