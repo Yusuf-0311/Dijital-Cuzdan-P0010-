@@ -17,7 +17,7 @@ public class TransferController : ControllerBase
     public TransferController(ITransferService transfers) => _transfers = transfers;
 
     /// <summary>
-    /// Para gönder. Gövde örneği:
+    /// Para gönder. Alıcı: kullanıcı adı, e-posta veya cüzdan numarası ("SW 0000 0422"). Gövde örneği:
     /// { "recipient": "ali@ornek.com", "amount": 150.00, "description": "Kira payı" }
     /// </summary>
     [HttpPost]
@@ -30,7 +30,7 @@ public class TransferController : ControllerBase
         return this.ToActionResult(await _transfers.TransferAsync(userId.Value, request, ct));
     }
 
-    /// <summary>Göndermeden önce alıcıyı doğrula: /api/transfers/recipient?query=ali@ornek.com</summary>
+    /// <summary>Göndermeden önce alıcıyı doğrula: /api/transfers/recipient?query=ali@ornek.com (veya cüzdan numarası)</summary>
     [HttpGet("recipient")]
     public async Task<IActionResult> FindRecipient([FromQuery] string query, CancellationToken ct)
     {

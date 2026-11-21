@@ -19,7 +19,7 @@ public class WalletService : IWalletService
         _limits = limits.Value;
     }
 
-    private static WalletDto ToDto(Wallet w) => new(w.Id, w.Balance, w.Currency);
+    private static WalletDto ToDto(Wallet w) => new(w.Id, w.Balance, w.Currency, WalletNumber.Format(w.Id));
 
     public async Task<ServiceResult<WalletDto>> CreateWalletAsync(int userId, string currency = "TRY", CancellationToken ct = default)
     {

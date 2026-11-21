@@ -27,7 +27,8 @@ public record TransferRequest(
 public record TransactionFilter(string? Type, DateTime? From, DateTime? To, int? Page = null, int? PageSize = null);
 
 // ---- Yanıtlar ----
-public record WalletDto(int Id, decimal Balance, string Currency);
+/// <summary>Cüzdan. WalletNumber: kullanıcıya gösterilen ve transferde alıcı olarak girilebilen numara ("SW 0000 0422").</summary>
+public record WalletDto(int Id, decimal Balance, string Currency, string WalletNumber);
 
 /// <summary>Günlük çıkış limiti durumu. ResetsAt: limitin sıfırlanacağı an (UTC, Türkiye saatiyle gece 00:00).</summary>
 public record WalletLimitsDto(decimal DailyLimit, decimal UsedToday, decimal RemainingToday, string Currency, DateTime ResetsAt);
@@ -65,6 +66,6 @@ public record TransactionDto(
 public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 
 /// <summary>Transfer öncesi "doğru kişiye mi gönderiyorum?" onayı için. İsim maskelenir.</summary>
-public record RecipientDto(int WalletId, string MaskedName, string Currency);
+public record RecipientDto(int WalletId, string MaskedName, string Currency, string WalletNumber);
 
 public record RecentRecipientDto(int WalletId, string Username, int TransferCount, DateTime LastTransferAt);

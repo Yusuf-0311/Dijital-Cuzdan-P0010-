@@ -213,14 +213,15 @@ Tüm cüzdan uç noktaları `Authorization: Bearer <token>` ister. Para hareketi
 |---|---|---|
 | POST | `/api/auth/register` | Kayıt (cüzdan otomatik oluşur) |
 | POST | `/api/auth/login` | Giriş, JWT döner |
-| GET | `/api/wallet` | Cüzdan ve bakiye |
+| GET | `/api/wallet` | Cüzdan, bakiye ve cüzdan numarası (`SW 0000 0422`) |
 | POST | `/api/wallet/deposit` | Para yatır `{ "amount": 100, "description": "..." }` |
 | POST | `/api/wallet/withdraw` | Para çek |
 | GET | `/api/wallet/limits` | Günlük çıkış limiti: limit, bugün kullanılan, kalan, sıfırlanma zamanı |
 | GET | `/api/wallet/transactions` | Geçmiş. `?type=Payment&from=2026-11-01&to=2026-11-30&page=1&pageSize=20` |
 | GET | `/api/wallet/transactions/{referenceNo}` | Dekont |
-| GET | `/api/transfers/recipient?query=` | Alıcıyı doğrula (maskeli ad) |
-| POST | `/api/transfers` | Transfer `{ "recipient": "ali@ornek.com", "amount": 50 }` |
+| GET | `/api/wallet/transactions/{referenceNo}/pdf` | Dekontu PDF olarak indir (karşı taraf ve abone no maskeli, bakiye yazılmaz) |
+| GET | `/api/transfers/recipient?query=` | Alıcıyı doğrula (maskeli ad); kullanıcı adı, e-posta veya cüzdan numarası |
+| POST | `/api/transfers` | Transfer `{ "recipient": "ali@ornek.com", "amount": 50 }`; alıcı cüzdan numarası da olabilir (`"SW 0000 0422"`) |
 | GET | `/api/transfers/recent-recipients` | Son alıcılar |
 | GET | `/api/payments/billers` | Kurumlar. `?category=Electricity` |
 | POST | `/api/payments/pay` | Fatura öde `{ "billerId": 1, "subscriberNo": "1234567", "amount": 245.5, "saveForLater": true, "nickname": "Ev elektriği" }` |
@@ -344,5 +345,5 @@ Uygulanan güvenlik önlemleri:
 
 | Üye | Sorumluluk |
 |---|---|
-| Yusuf | Veritabanı mimarisi, cüzdan bakiye yönetimi, transfer servisleri, fatura ödemeleri, işlem geçmişi ve dekont, günlük işlem limiti, testler, CI; planlanan: PDF dekont, otomatik ödeme talimatı, loglama |
+| Yusuf | Veritabanı mimarisi, cüzdan bakiye yönetimi, transfer servisleri, fatura ödemeleri, işlem geçmişi ve dekont, günlük işlem limiti, PDF dekont, testler, CI; planlanan: otomatik ödeme talimatı, loglama |
 | Kadir | Kimlik doğrulama (`AuthController`, JWT, şifre hash'leme, girdi doğrulama) ve hesap güvenliği; planlanan: web arayüzü, ürün içi yapay zeka özelliği, değiştirilemez işlem defteri, Docker paketleme |

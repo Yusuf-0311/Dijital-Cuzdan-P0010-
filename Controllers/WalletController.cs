@@ -92,4 +92,25 @@ public class WalletController : ControllerBase
 
         return this.ToActionResult(await _wallets.GetReceiptAsync(userId.Value, referenceNo, ct));
     }
+
+    /// <summary>
+    /// Dekontu PDF olarak indirir. Yetki kontrolü JSON dekontla aynı servisten geçer:
+    /// işlemin tarafı olmayan kullanıcı 404 alır (başkasının referans numarası keşfedilemez).
+    /// </summary>
+    [HttpGet("transactions/{referenceNo}/pdf")]
+    public async Task<IActionResult> GetReceiptPdf(
+        string referenceNo, [FromServices] IReceiptPdfGenerator pdf, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null) return Unauthorized();
+
+        var receipt = await _wallets.GetReceiptAsync(userId.Value, referenceNo, ct);
+        if (!receipt.Success)
+            return this.ToActionResult(receipt);
+
+        var tx = receipt.Data!;
+        // Token'daki kullanıcı adı ("unique_name"); yoksa dekontta "Sayın" satırı yazılmaz.
+        var ownerName = User.FindFirst("unique_name")?.Value ?? User.Identity?.Name;
+        return File(pdf.Generate(tx, ownerName), "application/pdf", $"dekont-{tx.ReferenceNo}.pdf");
+    }
 }

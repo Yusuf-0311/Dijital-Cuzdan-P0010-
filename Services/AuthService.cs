@@ -38,6 +38,12 @@ public class AuthService : IAuthService
         var username = request.Username.Trim();
         var email = request.Email.Trim().ToLowerInvariant();
 
+        // Transferde alıcı alanı cüzdan numarasını da kabul ettiği için kullanıcı adı cüzdan
+        // numarası gibi görünemez; yoksa "sw00000422" adlı biri, 42 numaralı cüzdana giden parayı
+        // kendine geliyormuş gibi gösterebilir (ya da tersi). Numara önceliklidir, bu yüzden engellenir.
+        if (WalletNumber.TryParse(username, out _))
+            return ServiceResult<AuthUserDto>.Fail(ErrorCode.Validation, "Kullanıcı adı cüzdan numarası biçiminde olamaz.");
+
         // Ön kontrol: kullanıcıya anlaşılır mesaj vermek için. Asıl garanti veritabanındaki unique index.
         if (await _db.Users.AnyAsync(u => u.Email == email, ct))
             return ServiceResult<AuthUserDto>.Fail(ErrorCode.Duplicate, "Bu e-posta adresi zaten kayıtlı.");

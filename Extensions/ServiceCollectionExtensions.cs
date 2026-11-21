@@ -30,6 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IWalletService, WalletService>();
         services.AddScoped<ITransferService, TransferService>();
         services.AddScoped<IPaymentService, PaymentService>();
+        services.AddSingleton<IReceiptPdfGenerator, ReceiptPdfGenerator>(); // durumsuz, tek örnek yeterli
         return services;
     }
 

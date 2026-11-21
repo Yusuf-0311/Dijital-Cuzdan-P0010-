@@ -24,7 +24,6 @@ public class WalletLimitOptions
 /// </summary>
 internal static class DailyLimit
 {
-    private static readonly TimeZoneInfo Turkey = FindTurkeyTimeZone();
     private static readonly CultureInfo TurkishCulture = CultureInfo.GetCultureInfo("tr-TR");
 
     /// <summary>
@@ -34,9 +33,9 @@ internal static class DailyLimit
     /// </summary>
     public static DateTime DayStartUtc(DateTime nowUtc)
     {
-        var localNow = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, Turkey);
+        var localNow = TurkeyTime.FromUtc(nowUtc);
         var localMidnight = DateTime.SpecifyKind(localNow.Date, DateTimeKind.Unspecified);
-        return TimeZoneInfo.ConvertTimeToUtc(localMidnight, Turkey);
+        return TimeZoneInfo.ConvertTimeToUtc(localMidnight, TurkeyTime.Zone);
     }
 
     /// <summary>Cüzdandan bugün çıkan toplam (tamamlanmış para çekme + giden transfer). SUM veritabanında hesaplanır.</summary>
@@ -56,29 +55,5 @@ internal static class DailyLimit
 
         var remaining = Math.Max(0m, limit - usedToday);
         return $"Günlük çıkış limiti aşılıyor. Bugün kalan limit: {remaining.ToString("N2", TurkishCulture)} {currency}.";
-    }
-
-    private static TimeZoneInfo FindTurkeyTimeZone()
-    {
-        // Linux/macOS IANA kimliği, Windows kendi kimliğini kullanır.
-        foreach (var id in new[] { "Europe/Istanbul", "Turkey Standard Time" })
-        {
-            try
-            {
-                return TimeZoneInfo.FindSystemTimeZoneById(id);
-            }
-            catch (TimeZoneNotFoundException)
-            {
-                // Bu sistemde bu kimlik yok; sıradakini dene.
-            }
-            catch (InvalidTimeZoneException)
-            {
-                // Saat dilimi verisi bozuk; sıradakini dene.
-            }
-        }
-
-        // Saat dilimi verisi olmayan ortamlar (ör. bazı Docker imajları) için:
-        // Türkiye 2016'dan beri yaz saati uygulamıyor, sabit UTC+3.
-        return TimeZoneInfo.CreateCustomTimeZone("Turkey", TimeSpan.FromHours(3), "Türkiye", "Türkiye");
     }
 }

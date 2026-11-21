@@ -119,7 +119,7 @@ public class TransferService : ITransferService
         if (match.UserId == senderUserId)
             return ServiceResult<RecipientDto>.Fail(ErrorCode.SelfTransfer, "Kendi cüzdanınıza transfer yapamazsınız.");
 
-        return ServiceResult<RecipientDto>.Ok(new RecipientDto(match.Id, NameMasker.Mask(match.Username), match.Currency));
+        return ServiceResult<RecipientDto>.Ok(new RecipientDto(match.Id, NameMasker.Mask(match.Username), match.Currency, WalletNumber.Format(match.Id)));
     }
 
     public async Task<ServiceResult<IReadOnlyList<RecentRecipientDto>>> GetRecentRecipientsAsync(int userId, int take = 5, CancellationToken ct = default)
@@ -161,7 +161,9 @@ public class TransferService : ITransferService
             .FirstOrDefaultAsync(ct);
 
     /// <summary>
-    /// E-posta veya kullanıcı adı (büyük/küçük harf duyarsız) ile cüzdan arar.
+    /// Cüzdan numarası ("SW 0000 0422"), e-posta veya kullanıcı adı (büyük/küçük harf duyarsız) ile cüzdan arar.
+    /// Cüzdan numarasının kontrol hanesi tutmuyorsa numara olarak kabul edilmez; böylece yazım hatası
+    /// başka bir cüzdana denk gelmez.
     /// </summary>
     /// <remarks>
     /// Bilinçli karar: Kod analizi (CA1862) burada string.Equals(..., StringComparison.OrdinalIgnoreCase)
@@ -171,6 +173,9 @@ public class TransferService : ITransferService
     /// </remarks>
     private IQueryable<Wallet> WalletsMatching(string recipient)
     {
+        if (WalletNumber.TryParse(recipient, out var walletId))
+            return _db.Wallets.AsNoTracking().Where(w => w.Id == walletId);
+
         var key = recipient.Trim().ToLowerInvariant();
 #pragma warning disable CA1862 // EF Core sorgusu: StringComparison SQL'e çevrilemez (bkz. remarks)
         return _db.Wallets.AsNoTracking()
