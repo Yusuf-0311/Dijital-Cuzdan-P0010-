@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using SecureWallet.Api.Data;
 using SecureWallet.Api.Models;
 using SecureWallet.Api.Services;
@@ -42,7 +43,22 @@ public static class TestData
 
     private static AuditService Audit(AppDbContext db) => new(db, new HttpContextAccessor());
 
-    public static WalletService CreateWalletService(AppDbContext db) => new(db, Audit(db));
-    public static TransferService CreateTransferService(AppDbContext db) => new(db, Audit(db));
+    private static IOptions<WalletLimitOptions> Limits(decimal? dailyLimit) =>
+        Options.Create(new WalletLimitOptions
+        {
+            DailyOutgoingLimit = dailyLimit ?? WalletLimitOptions.DefaultDailyOutgoingLimit
+        });
+
+    /// <summary>Test için cüzdan servisi kurar.</summary>
+    /// <param name="db">Testin veritabanı bağlantısı.</param>
+    /// <param name="dailyLimit">Günlük çıkış limiti; verilmezse varsayılan (100.000).</param>
+    public static WalletService CreateWalletService(AppDbContext db, decimal? dailyLimit = null) =>
+        new(db, Audit(db), Limits(dailyLimit));
+
+    /// <summary>Test için transfer servisi kurar.</summary>
+    /// <param name="db">Testin veritabanı bağlantısı.</param>
+    /// <param name="dailyLimit">Günlük çıkış limiti; verilmezse varsayılan (100.000).</param>
+    public static TransferService CreateTransferService(AppDbContext db, decimal? dailyLimit = null) =>
+        new(db, Audit(db), Limits(dailyLimit));
     public static PaymentService CreatePaymentService(AppDbContext db) => new(db, Audit(db));
 }

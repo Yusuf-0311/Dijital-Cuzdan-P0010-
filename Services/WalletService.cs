@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SecureWallet.Api.Data;
 using SecureWallet.Api.Dtos;
 using SecureWallet.Api.Models;
@@ -9,11 +10,13 @@ public class WalletService : IWalletService
 {
     private readonly AppDbContext _db;
     private readonly IAuditService _audit;
+    private readonly WalletLimitOptions _limits;
 
-    public WalletService(AppDbContext db, IAuditService audit)
+    public WalletService(AppDbContext db, IAuditService audit, IOptions<WalletLimitOptions> limits)
     {
         _db = db;
         _audit = audit;
+        _limits = limits.Value;
     }
 
     private static WalletDto ToDto(Wallet w) => new(w.Id, w.Balance, w.Currency);
@@ -93,6 +96,24 @@ public class WalletService : IWalletService
             new WalletSummaryDto(ToDto(wallet), recent, incoming, outgoing, monthStart));
     }
 
+    public async Task<ServiceResult<WalletLimitsDto>> GetLimitsAsync(int userId, CancellationToken ct = default)
+    {
+        var wallet = await _db.Wallets.AsNoTracking().FirstOrDefaultAsync(w => w.UserId == userId, ct);
+        if (wallet is null)
+            return ServiceResult<WalletLimitsDto>.Fail(ErrorCode.NotFound, "Cüzdan bulunamadı.");
+
+        var dayStart = DailyLimit.DayStartUtc(DateTime.UtcNow);
+        var used = await DailyLimit.UsedTodayAsync(_db, wallet.Id, dayStart, ct);
+        var limit = _limits.DailyOutgoingLimit;
+
+        return ServiceResult<WalletLimitsDto>.Ok(new WalletLimitsDto(
+            DailyLimit: limit,
+            UsedToday: used,
+            RemainingToday: Math.Max(0m, limit - used),
+            Currency: wallet.Currency,
+            ResetsAt: dayStart.AddDays(1)));
+    }
+
     public Task<ServiceResult<TransactionDto>> DepositAsync(int userId, decimal amount, string? description, CancellationToken ct = default)
     {
         var error = TransactionRules.Validate(amount, description);
@@ -142,6 +163,15 @@ public class WalletService : IWalletService
 
             if (wallet.Balance < amount)
                 return ServiceResult<TransactionDto>.Fail(ErrorCode.InsufficientFunds, "Yetersiz bakiye.");
+
+            // Günlük limit bu deneme içinde, güncel kayıtlarla hesaplanır. Aynı anda gelen iki
+            // çekme isteği limiti birlikte aşmaya çalışırsa, ikisi de bu cüzdan satırını değiştirdiği
+            // için biri xmin çakışması alır; ConcurrencyRetry onu baştan dener ve limit yeniden
+            // hesaplandığında diğer isteğin tutarı da toplama girmiş olur.
+            var usedToday = await DailyLimit.UsedTodayAsync(_db, wallet.Id, DailyLimit.DayStartUtc(DateTime.UtcNow), ct);
+            var limitError = DailyLimit.Check(usedToday, amount, _limits.DailyOutgoingLimit, wallet.Currency);
+            if (limitError is not null)
+                return ServiceResult<TransactionDto>.Fail(ErrorCode.LimitExceeded, limitError);
 
             wallet.Balance -= amount;
 

@@ -36,6 +36,16 @@ public class WalletController : ControllerBase
         return this.ToActionResult(await _wallets.GetSummaryAsync(userId.Value, ct));
     }
 
+    /// <summary>Günlük çıkış limiti: limit, bugün kullanılan, kalan ve sıfırlanma zamanı (UTC).</summary>
+    [HttpGet("limits")]
+    public async Task<IActionResult> GetLimits(CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null) return Unauthorized();
+
+        return this.ToActionResult(await _wallets.GetLimitsAsync(userId.Value, ct));
+    }
+
     /// <summary>Para yatır.</summary>
     [HttpPost("deposit")]
     [EnableRateLimiting(RateLimitPolicies.Money)]

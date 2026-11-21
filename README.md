@@ -216,6 +216,7 @@ Tüm cüzdan uç noktaları `Authorization: Bearer <token>` ister. Para hareketi
 | GET | `/api/wallet` | Cüzdan ve bakiye |
 | POST | `/api/wallet/deposit` | Para yatır `{ "amount": 100, "description": "..." }` |
 | POST | `/api/wallet/withdraw` | Para çek |
+| GET | `/api/wallet/limits` | Günlük çıkış limiti: limit, bugün kullanılan, kalan, sıfırlanma zamanı |
 | GET | `/api/wallet/transactions` | Geçmiş. `?type=Payment&from=2026-11-01&to=2026-11-30&page=1&pageSize=20` |
 | GET | `/api/wallet/transactions/{referenceNo}` | Dekont |
 | GET | `/api/transfers/recipient?query=` | Alıcıyı doğrula (maskeli ad) |
@@ -287,6 +288,7 @@ Uygulanan güvenlik önlemleri:
 - **SQL injection yok.** Tüm sorgular EF Core üzerinden parametreli.
 - **Hata detayı sızdırılmaz.** `GlobalExceptionHandler` stack trace yerine genel mesaj ve `traceId` döner.
 - **Hız sınırı (rate limiting).** Para hareketlerinde dakikada 10 istek.
+- **Günlük çıkış limiti.** Para çekme ve giden transferlerin toplamı günde 100.000 TRY'yi aşamaz (`WalletLimits:DailyOutgoingLimit` ayarı). Gün, Türkiye saatiyle 00:00'da sıfırlanır. Hesap ele geçirilse bile cüzdan bir günde boşaltılamaz. Eşzamanlı isteklerde limit, mevcut `xmin` + yeniden deneme mekanizmasıyla korunur.
 - **Alıcı onayında isim maskeleme.** E-posta ile kullanıcı adının tamamı öğrenilemez.
 - **Denetim kaydı.** Her para hareketi IP ile `AuditLogs`'a yazılır.
 
@@ -342,5 +344,5 @@ Uygulanan güvenlik önlemleri:
 
 | Üye | Sorumluluk |
 |---|---|
-| Yusuf | Veritabanı mimarisi, cüzdan bakiye yönetimi, transfer servisleri, fatura ödemeleri, işlem geçmişi ve dekont, testler, CI; planlanan: günlük işlem limiti, PDF dekont, otomatik ödeme talimatı, loglama |
+| Yusuf | Veritabanı mimarisi, cüzdan bakiye yönetimi, transfer servisleri, fatura ödemeleri, işlem geçmişi ve dekont, günlük işlem limiti, testler, CI; planlanan: PDF dekont, otomatik ödeme talimatı, loglama |
 | Kadir | Kimlik doğrulama (`AuthController`, JWT, şifre hash'leme, girdi doğrulama) ve hesap güvenliği; planlanan: web arayüzü, ürün içi yapay zeka özelliği, değiştirilemez işlem defteri, Docker paketleme |
