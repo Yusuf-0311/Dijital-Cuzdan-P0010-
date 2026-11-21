@@ -29,6 +29,9 @@ public record TransactionFilter(string? Type, DateTime? From, DateTime? To, int?
 // ---- Yanıtlar ----
 public record WalletDto(int Id, decimal Balance, string Currency);
 
+/// <summary>Günlük çıkış limiti durumu. ResetsAt: limitin sıfırlanacağı an (UTC, Türkiye saatiyle gece 00:00).</summary>
+public record WalletLimitsDto(decimal DailyLimit, decimal UsedToday, decimal RemainingToday, string Currency, DateTime ResetsAt);
+
 /// <summary>
 /// Web sitesi ana sayfası için tek çağrıda özet: bakiye, son 5 işlem ve bu ayın gelen/giden toplamı.
 /// MonthStart: ay başlangıcı (UTC).

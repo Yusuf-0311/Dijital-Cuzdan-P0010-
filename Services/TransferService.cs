@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SecureWallet.Api.Data;
 using SecureWallet.Api.Dtos;
 using SecureWallet.Api.Models;
@@ -9,11 +10,13 @@ public class TransferService : ITransferService
 {
     private readonly AppDbContext _db;
     private readonly IAuditService _audit;
+    private readonly WalletLimitOptions _limits;
 
-    public TransferService(AppDbContext db, IAuditService audit)
+    public TransferService(AppDbContext db, IAuditService audit, IOptions<WalletLimitOptions> limits)
     {
         _db = db;
         _audit = audit;
+        _limits = limits.Value;
     }
 
     public async Task<ServiceResult<TransactionDto>> TransferAsync(int senderUserId, TransferRequest request, CancellationToken ct = default)
@@ -63,6 +66,13 @@ public class TransferService : ITransferService
 
             if (sender.Balance < amount)
                 return ServiceResult<TransactionDto>.Fail(ErrorCode.InsufficientFunds, "Yetersiz bakiye.");
+
+            // Günlük çıkış limiti (para çekmelerle ortak). Eşzamanlı isteklerde xmin + ConcurrencyRetry
+            // sayesinde her deneme limiti güncel toplamla yeniden hesaplar.
+            var usedToday = await DailyLimit.UsedTodayAsync(_db, sender.Id, DailyLimit.DayStartUtc(DateTime.UtcNow), ct);
+            var limitError = DailyLimit.Check(usedToday, amount, _limits.DailyOutgoingLimit, sender.Currency);
+            if (limitError is not null)
+                return ServiceResult<TransactionDto>.Fail(ErrorCode.LimitExceeded, limitError);
 
             sender.Balance -= amount;
             receiver.Balance += amount;

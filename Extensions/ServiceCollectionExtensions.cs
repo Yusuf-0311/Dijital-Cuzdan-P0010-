@@ -13,9 +13,18 @@ public static class RateLimitPolicies
 
 public static class ServiceCollectionExtensions
 {
-    /// <summary>Cüzdan, transfer, ödeme ve audit servislerini kaydeder.</summary>
-    public static IServiceCollection AddWalletServices(this IServiceCollection services)
+    /// <summary>
+    /// Cüzdan, transfer, ödeme ve audit servislerini kaydeder. Yapılandırma verilirse
+    /// "WalletLimits" bölümü okunur; verilmezse varsayılan limitler kullanılır.
+    /// </summary>
+    public static IServiceCollection AddWalletServices(this IServiceCollection services, IConfiguration? configuration = null)
     {
+        var limits = services.AddOptions<WalletLimitOptions>()
+            .Validate(o => o.DailyOutgoingLimit > 0, "WalletLimits:DailyOutgoingLimit sıfırdan büyük olmalıdır.")
+            .ValidateOnStart(); // hatalı ayarla uygulama hiç açılmaz, ilk para işleminde patlamaz
+        if (configuration is not null)
+            limits.Bind(configuration.GetSection(WalletLimitOptions.SectionName));
+
         services.AddHttpContextAccessor(); // AuditService IP adresini buradan okur
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IWalletService, WalletService>();
